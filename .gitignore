@@ -1,0 +1,4 @@
+.vs/
+/BokurApi/bin/*
+/BokurApi/obj/*
+/BokurApi/Properties/launchSettings.json
