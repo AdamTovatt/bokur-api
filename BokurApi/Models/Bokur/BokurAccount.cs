@@ -1,4 +1,4 @@
-﻿namespace BokurApi.Models
+﻿namespace BokurApi.Models.Bokur
 {
     public class BokurAccount
     {

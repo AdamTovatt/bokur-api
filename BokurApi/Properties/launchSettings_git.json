@@ -14,11 +14,15 @@
       "dotnetRunMessages": true,
       "launchBrowser": false,
       "launchUrl": "swagger",
-      "applicationUrl": "https://localhost:5000;http://localhost:5001",
+      "applicationUrl": "https://localhost:5001;http://localhost:5000",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "NORDIGEN_ID": "id",
-        "NORDIGEN_KEY": "key"
+        "NORDIGEN_ID": "",
+        "NORDIGEN_KEY": "",
+        "BANK_ID": "NORDEA_BUSINESS_NDEASESS",
+        "NORDIGEN_REDIRECT_URL": "",
+        "NORDIGEN_USER_LANGUAGE": "EN",
+        "NORDIGEN_INTERNAL_REFERENCE": ""
       }
     }
   }

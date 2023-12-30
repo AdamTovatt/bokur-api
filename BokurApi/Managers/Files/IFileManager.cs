@@ -1,4 +1,4 @@
-﻿using BokurApi.Models;
+﻿using BokurApi.Models.Bokur;
 
 namespace BokurApi.Managers.Files
 {
