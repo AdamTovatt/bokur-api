@@ -3,8 +3,6 @@ using BokurApi.Managers.Transactions;
 using BokurApi.Models.Http;
 using BokurApi.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
-using RobinTTY.NordigenApiClient.Models.Errors;
-using RobinTTY.NordigenApiClient.Models.Requests;
 using RobinTTY.NordigenApiClient.Models.Responses;
 using System.Net;
 
@@ -21,7 +19,10 @@ namespace BokurApi.Controllers
         {
             Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
 
-            return new ApiResponse(await NordigenManager.Instance.Client.AccountsEndpoint.GetTransactions("60ad3e1b-9a1b-4dc1-aa63-9ab46e4a1821"));
+            if (requisition == null)
+                return new ApiResponse("No linked requisition was found. One has to be created.",  HttpStatusCode.BadRequest);
+
+            return new ApiResponse(await NordigenManager.Instance.GetTransactionsAsync(requisition));
         }
     }
 }

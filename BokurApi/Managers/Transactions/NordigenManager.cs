@@ -4,15 +4,22 @@ using BokurApi.Helpers;
 using RobinTTY.NordigenApiClient.Models.Responses;
 using RobinTTY.NordigenApiClient.Models.Errors;
 using RobinTTY.NordigenApiClient.Models.Requests;
+using BokurApi.Models.Exceptions;
 
 namespace BokurApi.Managers.Transactions
 {
     public class NordigenManager
     {
+        /// <summary>
+        /// The singleton instance of the nordigen manager
+        /// </summary>
         public static NordigenManager Instance { get { if (_instance == null) _instance = new NordigenManager(); return _instance; } }
 
         private static NordigenManager? _instance;
 
+        /// <summary>
+        /// The nordigen client that the manager uses
+        /// </summary>
         public NordigenClient Client { get; set; }
 
         public NordigenManager()
@@ -20,6 +27,31 @@ namespace BokurApi.Managers.Transactions
             HttpClient httpClient = new HttpClient();
             NordigenClientCredentials credentials = new NordigenClientCredentials(EnvironmentHelper.GetNordigenId(), EnvironmentHelper.GetNordigenKey());
             Client = new NordigenClient(httpClient, credentials);
+        }
+
+        /// <summary>
+        /// Will get a list of transactions that have been booked
+        /// </summary>
+        /// <param name="requisition">The requisitino to list the transactions for</param>
+        /// <param name="startDate">Optional start date</param>
+        /// <param name="endDate">Optional end date</param>
+        /// <returns>A list of transactions</returns>
+        /// <exception cref="NordigenException"></exception>
+        public async Task<List<Transaction>> GetTransactionsAsync(Requisition requisition, DateOnly? startDate = null, DateOnly? endDate = null)
+        {
+            List<Transaction> result = new List<Transaction>();
+
+            foreach (Guid accountId in requisition.Accounts)
+            {
+                NordigenApiResponse<AccountTransactions, AccountsError> response = await Client.AccountsEndpoint.GetTransactions(accountId, startDate, endDate);
+
+                if (!response.IsSuccess)
+                    throw new NordigenException(response.Error);
+
+                result.AddRange(response.Result.BookedTransactions);
+            }
+
+            return result;
         }
 
         /// <summary>
