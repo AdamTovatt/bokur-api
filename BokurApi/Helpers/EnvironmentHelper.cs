@@ -14,6 +14,8 @@ namespace BokurApi.Helpers
         private const string InternalReferenceName = "NORDIGEN_INTERNAL_REFERENCE";
         private const string ConnectionStringName = "DATABASE_URL";
 
+        private static string? connectionString = null;
+
         public static string GetNordigenId()
         {
             return GetVariable(NordigenIdName);
@@ -46,10 +48,13 @@ namespace BokurApi.Helpers
 
         public static string GetConnectionString()
         {
-            return GetVariable(ConnectionStringName);
+            if(connectionString == null)
+             connectionString = GetConnectionStringFromUrl(GetVariable(ConnectionStringName), SslMode.Prefer);
+            
+            return connectionString;
         }
 
-        private static string GetVariable(string name)
+        public static string GetVariable(string name)
         {
             string? variable = Environment.GetEnvironmentVariable(name);
 
@@ -70,6 +75,7 @@ namespace BokurApi.Helpers
             GetRedirectUrl();
             GetUserLanguage();
             GetInternalReference();
+            GetConnectionString();
         }
 
         private class ConnectionStringBuilder

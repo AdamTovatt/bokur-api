@@ -12,7 +12,7 @@ namespace BokurApi.Repositories
         /// </summary>
         public Repository()
         {
-            connectionString = EnvironmentHelper.GetConnectionStringFromUrl(EnvironmentHelper.GetConnectionString(), SslMode.Prefer);
+            connectionString = EnvironmentHelper.GetConnectionString();
         }
 
         /// <summary>

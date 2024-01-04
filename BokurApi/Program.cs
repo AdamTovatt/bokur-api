@@ -1,5 +1,6 @@
 using BokurApi.Helpers;
 using BokurApi.RateLimiting;
+using Dapper;
 
 namespace BokurApi
 {
@@ -10,6 +11,8 @@ namespace BokurApi
             var builder = WebApplication.CreateBuilder(args);
 
             EnvironmentHelper.TestMandatoryEnvironmentVariables(); // test that the mandatory environment variables exist, will throw an exception otherwise
+
+            SetupDatabase(); // set up the database
 
             // Add services to the container.
             builder.Services.AddDistributedMemoryCache();
@@ -42,6 +45,12 @@ namespace BokurApi
             app.UseRateLimiting();
 
             app.Run();
+        }
+
+        public static void SetupDatabase()
+        {
+            DatabaseMigrator.PerformMigrations(); // perform database migrations
+            DefaultTypeMap.MatchNamesWithUnderscores = true; // set up dapper to match column names with underscore
         }
     }
 }

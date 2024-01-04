@@ -19,6 +19,7 @@ namespace BokurApi.Helpers
             [typeof(decimal)] = NpgsqlDbType.Numeric,
             [typeof(bool)] = NpgsqlDbType.Boolean,
             [typeof(string)] = NpgsqlDbType.Varchar,
+            [typeof(System.String)] = NpgsqlDbType.Varchar,
             [typeof(char)] = NpgsqlDbType.Char,
             [typeof(Guid)] = NpgsqlDbType.Uuid,
             [typeof(DateTime)] = NpgsqlDbType.Timestamp,

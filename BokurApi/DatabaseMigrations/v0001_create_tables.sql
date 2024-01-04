@@ -11,5 +11,5 @@ CREATE TABLE bokur_transaction (
 	date TIMESTAMP NOT NULL,
 	associated_file_name VARCHAR DEFAULT NULL,
 	affected_account INT REFERENCES bokur_account(id),
-	ignored BOOLEAN
+	ignored BOOLEAN NOT NULL DEFAULT FALSE
 );

@@ -2,3 +2,5 @@
 /BokurApi/bin/*
 /BokurApi/obj/*
 /BokurApi/Properties/launchSettings.json
+/BokurApiTests/bin/*
+/BokurApiTests/obj/*
