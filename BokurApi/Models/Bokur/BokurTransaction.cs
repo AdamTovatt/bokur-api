@@ -10,17 +10,19 @@ namespace BokurApi.Models.Bokur
         public decimal Value { get; set; }
         public DateTime Date { get; set; }
         public string? AssociatedFileName { get; set; }
-        public BokurAccount? TargetAccount { get; set; }
+        public BokurAccount? AffectedAccount { get; set; }
+        public bool Ignored { get; set; }
 
-        public BokurTransaction(int id, string name, decimal value, DateTime timeOfCreation, string? associatedFileName, BokurAccount? targetAccount, string externalId)
+        public BokurTransaction(int id, string name, decimal value, DateTime timeOfCreation, string? associatedFileName, BokurAccount? affectedAccount, string externalId, bool ignored)
         {
             Id = id;
             Name = name;
             Value = value;
             Date = timeOfCreation;
             AssociatedFileName = associatedFileName;
-            TargetAccount = targetAccount;
+            AffectedAccount = affectedAccount;
             ExternalId = externalId;
+            Ignored = ignored;
         }
 
         public BokurTransaction(Transaction transaction)

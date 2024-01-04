@@ -1,4 +1,8 @@
-﻿namespace BokurApi.Helpers
+﻿using Npgsql;
+using System.Net;
+using System.Text;
+
+namespace BokurApi.Helpers
 {
     public static partial class EnvironmentHelper
     {
@@ -8,6 +12,7 @@
         private const string RedirectUrlName = "NORDIGEN_REDIRECT_URL";
         private const string UserLanguageName = "NORDIGEN_USER_LANGUAGE";
         private const string InternalReferenceName = "NORDIGEN_INTERNAL_REFERENCE";
+        private const string ConnectionStringName = "DATABASE_URL";
 
         public static string GetNordigenId()
         {
@@ -39,6 +44,11 @@
             return GetVariable(InternalReferenceName);
         }
 
+        public static string GetConnectionString()
+        {
+            return GetVariable(ConnectionStringName);
+        }
+
         private static string GetVariable(string name)
         {
             string? variable = Environment.GetEnvironmentVariable(name);
@@ -60,6 +70,93 @@
             GetRedirectUrl();
             GetUserLanguage();
             GetInternalReference();
+        }
+
+        private class ConnectionStringBuilder
+        {
+            public string? Host { get; set; }
+
+            public int Port { get; set; }
+
+            public string? Username { get; set; }
+
+            public string? Password { get; set; }
+
+            public string? Database { get; set; }
+
+            public SslMode SslMode { get; set; }
+
+            public bool TrustServerCertificate { get; set; }
+
+            public override string ToString()
+            {
+                StringBuilder stringBuilder = new StringBuilder();
+                if (Host != null)
+                {
+                    stringBuilder.Append("Host=");
+                    stringBuilder.Append(Host);
+                    stringBuilder.Append(";");
+                }
+
+                if (Port != 0)
+                {
+                    stringBuilder.Append("Port=");
+                    stringBuilder.Append(Port);
+                    stringBuilder.Append(";");
+                }
+
+                if (Username != null)
+                {
+                    stringBuilder.Append("Username=");
+                    stringBuilder.Append(Username);
+                    stringBuilder.Append(";");
+                }
+
+                if (Password != null)
+                {
+                    stringBuilder.Append("Password=");
+                    stringBuilder.Append(Password);
+                    stringBuilder.Append(";");
+                }
+
+                if (Database != null)
+                {
+                    stringBuilder.Append("Database=");
+                    stringBuilder.Append(Database);
+                    stringBuilder.Append(";");
+                }
+
+                stringBuilder.Append("SSL Mode=");
+                stringBuilder.Append(SslMode.ToString());
+                stringBuilder.Append(";");
+                stringBuilder.Append("Trust Server Certificate=");
+                stringBuilder.Append(TrustServerCertificate);
+                return stringBuilder.ToString();
+            }
+        }
+
+        public static string GetConnectionStringFromUrl(string url, SslMode sslMode = SslMode.Require, bool trustServerCertificate = true)
+        {
+            try
+            {
+                Uri uri = new Uri(url);
+                string[] array = uri.UserInfo.Split(':');
+                ConnectionStringBuilder connectionStringBuilder = new ConnectionStringBuilder
+                {
+                    Host = uri.Host,
+                    Port = uri.Port,
+                    Username = array[0],
+                    Password = array[1],
+                    Database = uri.LocalPath.TrimStart('/'),
+                    SslMode = sslMode,
+                    TrustServerCertificate = trustServerCertificate
+                };
+                return connectionStringBuilder.ToString();
+            }
+            catch
+            {
+                throw new Exception("Unknown error when url was being converted to connection string");
+            }
         }
     }
 }
