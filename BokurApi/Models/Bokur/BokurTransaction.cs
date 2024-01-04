@@ -46,7 +46,12 @@ namespace BokurApi.Models.Bokur
             foreach (Transaction transaction in transactions)
                 result.Add(new BokurTransaction(transaction));
 
-            return result;
+            return result.OrderByDescending(x => x.Date).ToList();
+        }
+
+        public override string ToString()
+        {
+            return $"{Name}: {Value.ToString("0.00")}";
         }
     }
 }

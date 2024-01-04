@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using BokurApi.Helpers;
+using System.Text;
 
 namespace BokurApi.Models
 {
@@ -41,7 +42,7 @@ namespace BokurApi.Models
             foreach (string part in parts)
                 stringBuilder.Append(part);
 
-            return stringBuilder.ToString();
+            return stringBuilder.ToString().RemoveMultipleSpaces();
         }
     }
 }

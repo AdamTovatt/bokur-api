@@ -22,7 +22,8 @@
         "BANK_ID": "NORDEA_BUSINESS_NDEASESS",
         "NORDIGEN_REDIRECT_URL": "",
         "NORDIGEN_USER_LANGUAGE": "EN",
-        "NORDIGEN_INTERNAL_REFERENCE": ""
+        "NORDIGEN_INTERNAL_REFERENCE": "",
+        "DATABASE_URL": ""
       }
     }
   }
