@@ -8,17 +8,17 @@ namespace BokurApi.Models.Bokur
         public string ExternalId { get; set; }
         public string Name { get; set; }
         public decimal Value { get; set; }
-        public DateTime TimeOfCreation { get; set; }
-        public BokurFile? AssociatedFile { get; set; }
+        public DateTime Date { get; set; }
+        public string? AssociatedFileName { get; set; }
         public BokurAccount? TargetAccount { get; set; }
 
-        public BokurTransaction(int id, string name, decimal value, DateTime timeOfCreation, BokurFile? associatedFile, BokurAccount? targetAccount, string externalId)
+        public BokurTransaction(int id, string name, decimal value, DateTime timeOfCreation, string? associatedFileName, BokurAccount? targetAccount, string externalId)
         {
             Id = id;
             Name = name;
             Value = value;
-            TimeOfCreation = timeOfCreation;
-            AssociatedFile = associatedFile;
+            Date = timeOfCreation;
+            AssociatedFileName = associatedFileName;
             TargetAccount = targetAccount;
             ExternalId = externalId;
         }
@@ -34,7 +34,7 @@ namespace BokurApi.Models.Bokur
             Name = name.ToString();
             Value = transaction.TransactionAmount.Amount;
             ExternalId = transaction.InternalTransactionId ?? "";
-            TimeOfCreation = transaction.BookingDate ?? DateTime.MinValue;
+            Date = transaction.BookingDate ?? DateTime.Now;
         }
 
         public static List<BokurTransaction> GetList(List<Transaction> transactions)
