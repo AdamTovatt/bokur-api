@@ -5,6 +5,7 @@ using RobinTTY.NordigenApiClient.Models.Responses;
 using RobinTTY.NordigenApiClient.Models.Errors;
 using RobinTTY.NordigenApiClient.Models.Requests;
 using BokurApi.Models.Exceptions;
+using System.Collections.Concurrent;
 
 namespace BokurApi.Managers.Transactions
 {
@@ -40,11 +41,21 @@ namespace BokurApi.Managers.Transactions
         public async Task<List<Transaction>> GetTransactionsAsync(Requisition requisition, DateOnly? startDate = null, DateOnly? endDate = null)
         {
             List<Transaction> result = new List<Transaction>();
+            List<NordigenApiResponse<AccountTransactions, AccountsError>> responses = new List<NordigenApiResponse<AccountTransactions, AccountsError>>();
+            List<Task> tasks = new List<Task>();
 
             foreach (Guid accountId in requisition.Accounts)
             {
-                NordigenApiResponse<AccountTransactions, AccountsError> response = await Client.AccountsEndpoint.GetTransactions(accountId, startDate, endDate);
+                tasks.Add(Task.Run(async () =>
+                {
+                    responses.Add(await Client.AccountsEndpoint.GetTransactions(accountId, startDate, endDate));
+                }));
+            }
 
+            await Task.WhenAll(tasks);
+
+            foreach (NordigenApiResponse<AccountTransactions, AccountsError> response in responses)
+            {
                 if (!response.IsSuccess)
                     throw new NordigenException(response.Error);
 
