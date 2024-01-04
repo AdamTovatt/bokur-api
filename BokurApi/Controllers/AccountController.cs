@@ -10,7 +10,7 @@ namespace BokurApi.Controllers
     [Route("[controller]")]
     public class AccountController : ControllerBase
     {
-        [HttpPost("get-all")]
+        [HttpGet("get-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
         public async Task<ObjectResult> GetAllAccounts()
