@@ -1,4 +1,5 @@
 using BokurApi.Helpers;
+using BokurApi.Managers.Files.Google;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models.Bokur;
 using BokurApi.Models.Http;
@@ -39,7 +40,7 @@ namespace BokurApi.Controllers
             if (requisition == null)
                 return new ApiResponse("No linked requisition was found. One has to be created.", HttpStatusCode.BadRequest);
 
-            if(startDate == null)
+            if (startDate == null)
                 startDate = DefaultStartTime;
 
             List<Transaction> nordigenTransactions = await NordigenManager.Instance.GetTransactionsAsync(requisition, startDate.ToDateOnly(), endDate.ToDateOnly());
@@ -52,6 +53,37 @@ namespace BokurApi.Controllers
                 await TransactionRepository.Instance.CreateAsync(transaction);
 
             return new ApiResponse(newTransactions);
+        }
+
+        [HttpPut("upload-file")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        public async Task<ObjectResult> UploadFile(IFormFile file, int transactionId)
+        {
+            if (file == null)
+                return new ApiResponse("No file was provided in the request, should be IFormFile", HttpStatusCode.BadRequest);
+
+            if (file.Length > 1000 * 1000 * 128)
+                return new ApiResponse("File is too large, max size is 128MB", HttpStatusCode.BadRequest);
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+
+            if (transaction == null)
+                return new ApiResponse($"No transaction with id {transaction}", HttpStatusCode.BadRequest);
+
+            using (MemoryStream stream = new MemoryStream(new byte[file.Length]))
+            {
+                await file.CopyToAsync(stream);
+
+                bool saveFileResult = await FileManager.Instance.SaveFileAsync(new BokurFile(file.Name, stream.ToArray()));
+
+                if (!saveFileResult)
+                    return new ApiResponse("Error when saving file", HttpStatusCode.InternalServerError);
+            }
+
+            transaction.AssociatedFileName = file.Name;
+            await TransactionRepository.Instance.UpdateAsync(transaction);
+            return new ApiResponse("ok");
         }
 
         [HttpGet("get-transactions")]
