@@ -27,5 +27,12 @@ namespace BokurApi.Helpers
 
             return transactions.Where(x => !transactionsToRemove.Contains(x)).ToList();
         }
+
+        public static DateOnly? ToDateOnly(this DateTime? nullableDateTime)
+        {
+            if (nullableDateTime == null) return null;
+            DateTime dateTime = (DateTime)nullableDateTime;
+            return new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day);
+        }
     }
 }

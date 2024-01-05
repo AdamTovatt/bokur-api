@@ -14,9 +14,9 @@ namespace BokurApi.Controllers
     [Route("[controller]")]
     public class TransactionController : ControllerBase
     {
-        public static DateOnly DefaultStartDate = new DateOnly(2024, 1, 1); // never include transactions before this date
+        public static DateTime? DefaultStartTime = new DateTime(2024, 1, 1); // never include transactions before this date
 
-        [HttpPost]
+        [HttpPost("create-requsition")]
         [Limit(MaxRequests = 1, TimeWindow = 3)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
         public async Task<ObjectResult> CreateRequisition(string? redirectUrl = null) // to create a new requisition
@@ -39,7 +39,11 @@ namespace BokurApi.Controllers
             if (requisition == null)
                 return new ApiResponse("No linked requisition was found. One has to be created.", HttpStatusCode.BadRequest);
 
-            List<BokurTransaction> transactions = BokurTransaction.GetList(await NordigenManager.Instance.GetTransactionsAsync(requisition, startDate: DefaultStartDate));
+            if(startDate == null)
+                startDate = DefaultStartTime;
+
+            List<Transaction> nordigenTransactions = await NordigenManager.Instance.GetTransactionsAsync(requisition, startDate.ToDateOnly(), endDate.ToDateOnly());
+            List<BokurTransaction> transactions = BokurTransaction.GetList(nordigenTransactions);
             List<string> existingIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
 
             List<BokurTransaction> newTransactions = transactions.Where(x => !existingIds.Contains(x.ExternalId)).ToList().RemoveInternalTransactions();
