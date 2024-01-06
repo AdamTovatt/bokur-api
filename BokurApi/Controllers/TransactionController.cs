@@ -32,7 +32,7 @@ namespace BokurApi.Controllers
 
         [HttpPost("check-for-new-transactions")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> UpdateBankData(DateTime? startDate = null, DateTime? endDate = null)
         {
             Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
@@ -87,12 +87,12 @@ namespace BokurApi.Controllers
 
             transaction.AssociatedFileName = fileName;
             await TransactionRepository.Instance.UpdateAsync(transaction);
-            return new ApiResponse("ok");
+            return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
         [HttpPut("update-single")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> UpdateSingle(BokurTransaction transaction)
         {
             await TransactionRepository.Instance.UpdateAsync(transaction);
@@ -101,7 +101,7 @@ namespace BokurApi.Controllers
 
         [HttpPut("get-single")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(BokurTransaction), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(BokurTransaction), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetSingle(int transactionId)
         {
             BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
@@ -114,10 +114,53 @@ namespace BokurApi.Controllers
 
         [HttpGet("get-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetAll()
         {
             return new ApiResponse(await TransactionRepository.Instance.GetAllAsync());
+        }
+
+        [HttpGet("download-file")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> DownloadFile(int? transactionId = null, string? fileName = null)
+        {
+            if (transactionId == null && fileName == null)
+                return new ApiResponse("Either transactionId or fileName must be provided in query string", HttpStatusCode.BadRequest);
+
+            byte[]? bytes = null;
+
+            if (fileName != null)
+            {
+                BokurFile? file = await FileManager.Instance.GetFileAsync(fileName);
+
+                if(file == null)
+                    return new ApiResponse($"No file called {fileName} exists", HttpStatusCode.BadRequest);
+
+                bytes = file.Bytes;
+            }
+            else if(transactionId != null)
+            {
+                BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync((int)transactionId);
+
+                if(transaction == null)
+                    return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
+
+                if (transaction.AssociatedFileName == null)
+                    return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
+
+                BokurFile? file = await FileManager.Instance.GetFileAsync(transaction.AssociatedFileName);
+
+                if (file == null)
+                    return new ApiResponse($"No file called {fileName} exists", HttpStatusCode.BadRequest);
+
+                bytes = file.Bytes;
+            }
+
+            if(bytes == null)
+                return new ApiResponse("Error when getting file", HttpStatusCode.InternalServerError);
+
+            return File(bytes, "application/octet-stream", fileName);
         }
     }
 }
