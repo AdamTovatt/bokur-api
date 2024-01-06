@@ -75,6 +75,9 @@ namespace BokurApi.Controllers
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transaction}", HttpStatusCode.BadRequest);
 
+            if (transaction.AssociatedFileName != null)
+                return new ApiResponse($"Transaction with id {transactionId} already has a file associated with it", HttpStatusCode.BadRequest);
+
             string fileName = file.FileName;
             if (await FileManager.Instance.FileNameExistsAsync(fileName))
                 return new ApiResponse($"A file with the name {fileName} already exists", HttpStatusCode.Conflict);
