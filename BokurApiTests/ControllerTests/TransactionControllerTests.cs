@@ -1,8 +1,10 @@
 ﻿using BokurApi;
 using BokurApi.Controllers;
+using BokurApi.Managers.Files.Postgres;
 using BokurApi.Models.Bokur;
 using BokurApi.Repositories;
 using BokurApiTests.TestUtilities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BokurApiTests.ControllerTests
@@ -15,8 +17,6 @@ namespace BokurApiTests.ControllerTests
         [ClassInitialize]
         public static async Task BeforeAll(TestContext context)
         {
-            GlobalSettings.MocketEnvironment = true; // use a mocked environment (affects the FileManager)
-
             List<BokurTransaction> mockedTransactions = new List<BokurTransaction>()
             {
                 TestDataProvider.BokurTransaction1,
@@ -33,6 +33,7 @@ namespace BokurApiTests.ControllerTests
         public static async Task AfterAll()
         {
             await DatabaseHelper.CleanTable("bokur_transaction");
+            await DatabaseHelper.CleanTable("stored_file");
         }
 
         [TestInitialize]
@@ -65,6 +66,59 @@ namespace BokurApiTests.ControllerTests
             BokurTransaction transaction = (BokurTransaction)objectResult.Value;
 
             Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transaction.ExternalId);
+        }
+
+        [TestMethod]
+        public async Task UpdateSingleTransaction()
+        {
+            const string updatedName = "New, updated name";
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+
+            transaction.Name = updatedName;
+
+            ObjectResult objectResult = await controller.UpdateSingle(transaction);
+
+            Assert.IsNotNull(objectResult);
+            Assert.IsNotNull(objectResult.Value);
+
+            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+
+            Assert.AreEqual(updatedName, transaction.Name);
+            Assert.AreEqual(TestDataProvider.BokurTransaction1.Value, transaction.Value);
+            Assert.AreEqual(TestDataProvider.BokurTransaction1.Date, transaction.Date);
+            Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transaction.ExternalId);
+            Assert.AreEqual(TestDataProvider.BokurTransaction1.AffectedAccount, transaction.AffectedAccount);
+            Assert.AreEqual(TestDataProvider.BokurTransaction1.AssociatedFileName, transaction.AssociatedFileName);
+        }
+
+        [TestMethod]
+        public async Task UploadFile()
+        {
+            using (MemoryStream stream = new MemoryStream())
+            {
+                byte[] bytes = new byte[100];
+                stream.Write(bytes);
+                IFormFile file = new FormFile(stream, 0, bytes.Length, "testFile", "testFile.txt");
+
+                ObjectResult objectResult = await controller.UploadFile(file, 1);
+
+                Assert.IsNotNull(objectResult);
+
+                BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+                Assert.IsNotNull(transaction);
+
+                Assert.AreEqual("testFile.txt", transaction.AssociatedFileName);
+
+                BokurFile? bokurFile = await FileManager.Instance.GetFileAsync("testFile.txt");
+
+                Assert.IsNotNull(bokurFile);
+            }
         }
     }
 }

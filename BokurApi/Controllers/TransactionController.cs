@@ -71,17 +71,21 @@ namespace BokurApi.Controllers
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transaction}", HttpStatusCode.BadRequest);
 
+            string fileName = file.FileName;
+            if (await FileManager.Instance.FileNameExistsAsync(fileName))
+                return new ApiResponse($"A file with the name {fileName} already exists", HttpStatusCode.Conflict);
+
             using (MemoryStream stream = new MemoryStream(new byte[file.Length]))
             {
                 await file.CopyToAsync(stream);
 
-                bool saveFileResult = await FileManager.Instance.SaveFileAsync(new BokurFile(file.Name, stream.ToArray()));
+                bool saveFileResult = await FileManager.Instance.SaveFileAsync(new BokurFile(fileName, stream.ToArray()));
 
                 if (!saveFileResult)
                     return new ApiResponse("Error when saving file", HttpStatusCode.InternalServerError);
             }
 
-            transaction.AssociatedFileName = file.Name;
+            transaction.AssociatedFileName = fileName;
             await TransactionRepository.Instance.UpdateAsync(transaction);
             return new ApiResponse("ok");
         }
