@@ -137,6 +137,7 @@ namespace BokurApi.Controllers
                 if(file == null)
                     return new ApiResponse($"No file called {fileName} exists", HttpStatusCode.BadRequest);
 
+                fileName = file.Name;
                 bytes = file.Bytes;
             }
             else if(transactionId != null)
@@ -154,6 +155,7 @@ namespace BokurApi.Controllers
                 if (file == null)
                     return new ApiResponse($"No file called {fileName} exists", HttpStatusCode.BadRequest);
 
+                fileName = file.Name;
                 bytes = file.Bytes;
             }
 

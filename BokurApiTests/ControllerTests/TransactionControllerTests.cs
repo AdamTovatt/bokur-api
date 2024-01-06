@@ -6,6 +6,7 @@ using BokurApi.Repositories;
 using BokurApiTests.TestUtilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace BokurApiTests.ControllerTests
 {
@@ -118,7 +119,27 @@ namespace BokurApiTests.ControllerTests
                 BokurFile? bokurFile = await FileManager.Instance.GetFileAsync("testFile.txt");
 
                 Assert.IsNotNull(bokurFile);
+
+                objectResult = await controller.UploadFile(file, 1);
+
+                Assert.IsNotNull(objectResult);
+                Assert.AreEqual((int)HttpStatusCode.Conflict, objectResult.StatusCode);
             }
+        }
+
+        [TestMethod]
+        public async Task DownloadFile()
+        {
+            await UploadFile();
+            IActionResult result = await controller.DownloadFile(1);
+
+            Assert.IsNotNull(result);
+
+            Assert.IsInstanceOfType(result, typeof(FileResult));
+
+            FileResult fileResult = (FileResult)result;
+            Assert.AreEqual("application/octet-stream", fileResult.ContentType);
+            Assert.AreEqual("testFile.txt", fileResult.FileDownloadName);
         }
     }
 }
