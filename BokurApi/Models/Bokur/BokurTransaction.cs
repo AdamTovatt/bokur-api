@@ -13,6 +13,14 @@ namespace BokurApi.Models.Bokur
         public BokurAccount? AffectedAccount { get; set; }
         public bool Ignored { get; set; }
 
+        public bool RequiresAction
+        {
+            get
+            {
+                return !Ignored && (AffectedAccount == null || AffectedAccount == null);
+            }
+        }
+
         public BokurTransaction(int id, string externalId, string name, decimal value, DateTime date, string? associatedFileName, BokurAccount? affectedAccount, bool ignored)
         {
             Id = id;

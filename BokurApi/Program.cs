@@ -1,11 +1,20 @@
 using BokurApi.Helpers;
+using BokurApi.Models;
 using BokurApi.RateLimiting;
 using Dapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 namespace BokurApi
 {
     public class Program
     {
+        private const string version = "v1";
+        private const string authDomain = $"https://sakur.eu.auth0.com/";
+        private const string authAudience = "https://sakurapi.se/careless-api/";
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -22,7 +31,32 @@ namespace BokurApi
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            var app = builder.Build();
+            builder.Services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+                .AddJwtBearer(options =>
+                {
+                    options.Authority = authDomain;
+                    options.Audience = authAudience;
+
+                    // If the access token does not have a `sub` claim, `User.Identity.Name` will be `null`. Map it to a different claim by setting the NameClaimType below.
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        NameClaimType = ClaimTypes.NameIdentifier
+                    };
+                });
+
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("admin", policy => policy.Requirements.Add(new HasScopeRequirement("admin", authDomain)));
+            });
+
+            builder.Services.AddSingleton<IAuthorizationHandler, HasScopeHandler>();
+
+            WebApplication app = builder.Build();
 
             app.UseSwagger();
             app.UseSwaggerUI();

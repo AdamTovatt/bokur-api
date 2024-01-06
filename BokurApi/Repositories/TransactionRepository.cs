@@ -89,6 +89,23 @@ namespace BokurApi.Repositories
             }
         }
 
+        public async Task<List<BokurTransaction>> GetAllThatRequiresActionAsync()
+        {
+            const string query = @"SELECT * FROM bokur_transaction WHERE ignored = FALSE AND (associated_file_name IS NULL OR affected_account IS NULL)";
+
+            using (NpgsqlConnection connection = await GetConnectionAsync())
+                return await connection.GetAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
+                {
+                    {
+                        nameof(BokurTransaction.AffectedAccount), async (x) =>
+                        {
+                            if(x == null) return null;
+                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                        }
+                    }
+                });
+        }
+
         public async Task<List<BokurTransaction>> GetAllAsync()
         {
             const string query = @"SELECT * FROM bokur_transaction";

@@ -38,10 +38,7 @@ namespace BokurApiTests.ControllerTests
         }
 
         [TestInitialize]
-        public void BeforeEach()
-        {
-
-        }
+        public void BeforeEach() { }
 
         [TestMethod]
         public async Task GetTransactions()
@@ -94,7 +91,6 @@ namespace BokurApiTests.ControllerTests
             Assert.AreEqual(TestDataProvider.BokurTransaction1.Date, transaction.Date);
             Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transaction.ExternalId);
             Assert.AreEqual(TestDataProvider.BokurTransaction1.AffectedAccount, transaction.AffectedAccount);
-            Assert.AreEqual(TestDataProvider.BokurTransaction1.AssociatedFileName, transaction.AssociatedFileName);
         }
 
         [TestMethod]

@@ -1,10 +1,12 @@
 using BokurApi.Helpers;
 using BokurApi.Managers.Files.Postgres;
 using BokurApi.Managers.Transactions;
+using BokurApi.Models;
 using BokurApi.Models.Bokur;
 using BokurApi.Models.Http;
 using BokurApi.RateLimiting;
 using BokurApi.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RobinTTY.NordigenApiClient.Models.Responses;
 using System.Net;
@@ -17,6 +19,7 @@ namespace BokurApi.Controllers
     {
         public static DateTime? DefaultStartTime = new DateTime(2024, 1, 1); // never include transactions before this date
 
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPost("create-requsition")]
         [Limit(MaxRequests = 1, TimeWindow = 3)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
@@ -32,7 +35,7 @@ namespace BokurApi.Controllers
 
         [HttpPost("check-for-new-transactions")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> UpdateBankData(DateTime? startDate = null, DateTime? endDate = null)
         {
             Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
@@ -55,6 +58,7 @@ namespace BokurApi.Controllers
             return new ApiResponse(newTransactions);
         }
 
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPut("upload-file")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
@@ -90,6 +94,7 @@ namespace BokurApi.Controllers
             return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPut("update-single")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
@@ -99,6 +104,7 @@ namespace BokurApi.Controllers
             return new ApiResponse("ok");
         }
 
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPut("get-single")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(BokurTransaction), (int)HttpStatusCode.OK)]
@@ -112,17 +118,28 @@ namespace BokurApi.Controllers
             return new ApiResponse(transaction);
         }
 
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpGet("get-all-that-requires-action")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> GetAllThatRequiresAction()
+        {
+            return new ApiResponse(await TransactionRepository.Instance.GetAllThatRequiresActionAsync());
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
         [HttpGet("get-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetAll()
         {
             return new ApiResponse(await TransactionRepository.Instance.GetAllAsync());
         }
 
+        [Authorize(AuthorizationRole.Admin)]
         [HttpGet("download-file")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        [ProducesResponseType(typeof(File), (int)HttpStatusCode.OK)]
         public async Task<IActionResult> DownloadFile(int? transactionId = null, string? fileName = null)
         {
             if (transactionId == null && fileName == null)

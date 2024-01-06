@@ -76,6 +76,28 @@ namespace BokurApiTests.RepositoryTests
         }
 
         [TestMethod]
+        public async Task GetAllThatRequiresAction()
+        {
+            await Create();
+
+            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+
+            Assert.AreEqual(2, transactions.Count);
+
+            BokurTransaction transaction = transactions[0];
+
+            transaction.Name = "Updated name";
+            transaction.AssociatedFileName = "Updated file name";
+            transaction.AffectedAccount = await AccountRepository.Instance.GetByIdAsync(1);
+
+            await TransactionRepository.Instance.UpdateAsync(transaction);
+
+            transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+
+            Assert.AreEqual(1, transactions.Count);
+        }
+
+        [TestMethod]
         public async Task Update()
         {
             await Create();
