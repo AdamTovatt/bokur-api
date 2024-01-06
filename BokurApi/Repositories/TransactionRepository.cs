@@ -76,9 +76,9 @@ namespace BokurApi.Repositories
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
             {
-                return await connection.QuerySingleOrDefaultAsync<BokurTransaction>(query, new { Id = id }, new Dictionary<string, Func<object?, Task<object?>>>()
+                return await connection.GetSingleOrDefaultAsync<BokurTransaction>(query, new { Id = id }, new Dictionary<string, Func<object?, Task<object?>>>()
                 {
-                    {
+                    { // use a manual parameter lookup for affected account because it's just an id from the database but we want to use a cached object
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
                             if(x == null) return null;
@@ -94,7 +94,7 @@ namespace BokurApi.Repositories
             const string query = @"SELECT * FROM bokur_transaction";
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
-                return await connection.QueryAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
+                return await connection.GetAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
                 {
                     {
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
@@ -115,7 +115,7 @@ namespace BokurApi.Repositories
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
             {
-                return (await connection.QueryAsync<string>(query, new { startDate, endDate }));
+                return (await connection.GetAsync<string>(query, new { startDate, endDate }));
             }
         }
     }

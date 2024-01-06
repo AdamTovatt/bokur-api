@@ -1,0 +1,4 @@
+CREATE TABLE stored_file (
+	name VARCHAR UNIQUE NOT NULL PRIMARY KEY,
+	content BYTEA NOT NULL
+);

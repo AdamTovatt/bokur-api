@@ -1,4 +1,4 @@
-﻿namespace BokurApi.Managers.Files.Google
+﻿namespace BokurApi.Managers.Files.Postgres
 {
     public class FileManager
     {

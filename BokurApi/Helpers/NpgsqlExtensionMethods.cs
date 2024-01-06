@@ -6,7 +6,7 @@ namespace BokurApi.Helpers
 {
     public static class NpgsqlExtensionMethods
     {
-        public static async Task<List<T>> QueryAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null)
+        public static async Task<List<T>> GetAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null)
         {
             using (NpgsqlCommand command = new NpgsqlCommand(query, connection))
             {
@@ -18,11 +18,11 @@ namespace BokurApi.Helpers
             }
         }
 
-        public static async Task<T?> QuerySingleOrDefaultAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>> manualParameterLookup = null)
+        public static async Task<T?> GetSingleOrDefaultAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null)
         {
-            return (await connection.QueryAsync<T>(query, parameters, manualParameterLookup)).FirstOrDefault();
+            return (await connection.GetAsync<T>(query, parameters, manualParameterLookup)).FirstOrDefault();
         }
-
+        
         private static async Task<List<T>> GetObjectsAsync<T>(this NpgsqlDataReader reader, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup)
         {
             if (!await reader.ReadAsync())
@@ -37,7 +37,7 @@ namespace BokurApi.Helpers
 
             List<T> result = new List<T>();
 
-            if (columns.Count == 1 && (typeof(T) == typeof(string) || typeof(T) == typeof(Decimal) || typeof(T).IsPrimitive)) // these types we will cast directly if only one column
+            if (columns.Count == 1 && typeof(T).GetShouldSkipConstructorCall()) // these types we will cast directly if only one column
             {
                 string columnName = columns[0];
                 do
@@ -82,6 +82,11 @@ namespace BokurApi.Helpers
 
                 return result;
             }
+        }
+
+        private static bool GetShouldSkipConstructorCall(this Type type)
+        {
+            return type == typeof(string) || type == typeof(Decimal) || type.IsPrimitive || type == typeof(byte[]);
         }
 
         private static ConstructorInfo GetConstructor(this Type type, List<string> columns)

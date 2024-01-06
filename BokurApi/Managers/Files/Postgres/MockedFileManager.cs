@@ -1,6 +1,6 @@
 ﻿using BokurApi.Models.Bokur;
 
-namespace BokurApi.Managers.Files.Google
+namespace BokurApi.Managers.Files.Postgres
 {
     internal class MockedFileManager : IFileManager
     {
@@ -16,7 +16,7 @@ namespace BokurApi.Managers.Files.Google
             return true;
         }
 
-        public async Task<BokurFile> GetFileAsync(string fileName)
+        public async Task<BokurFile?> GetFileAsync(string fileName)
         {
             await Task.CompletedTask;
             return new BokurFile("Mocked name", new byte[100]);

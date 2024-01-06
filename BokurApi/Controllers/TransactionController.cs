@@ -1,5 +1,5 @@
 using BokurApi.Helpers;
-using BokurApi.Managers.Files.Google;
+using BokurApi.Managers.Files.Postgres;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models.Bokur;
 using BokurApi.Models.Http;
@@ -86,10 +86,32 @@ namespace BokurApi.Controllers
             return new ApiResponse("ok");
         }
 
-        [HttpGet("get-transactions")]
+        [HttpPut("update-single")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
-        public async Task<ObjectResult> GetBankData()
+        public async Task<ObjectResult> UpdateSingle(BokurTransaction transaction)
+        {
+            await TransactionRepository.Instance.UpdateAsync(transaction);
+            return new ApiResponse("ok");
+        }
+
+        [HttpPut("get-single")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(BokurTransaction), (int)HttpStatusCode.Created)]
+        public async Task<ObjectResult> GetSingle(int transactionId)
+        {
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+
+            if (transaction == null)
+                return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
+
+            return new ApiResponse(transaction);
+        }
+
+        [HttpGet("get-all")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        public async Task<ObjectResult> GetAll()
         {
             return new ApiResponse(await TransactionRepository.Instance.GetAllAsync());
         }
