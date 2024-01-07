@@ -10,8 +10,15 @@ namespace BokurApi.Repositories
         public async Task<int> CreateAsync(BokurTransaction transaction)
         {
             const string query = $@"INSERT INTO bokur_transaction
-                                    (external_id, name, value, date) VALUES
-                                    (@{nameof(transaction.ExternalId)}, @{nameof(transaction.Name)}, @{nameof(transaction.Value)}, @{nameof(transaction.Date)})
+                                    (external_id, name, value, date, parent_transaction, affected_account) VALUES
+                                    (
+                                        @{nameof(transaction.ExternalId)},
+                                        @{nameof(transaction.Name)},
+                                        @{nameof(transaction.Value)},
+                                        @{nameof(transaction.Date)},
+                                        @{nameof(transaction.ParentId)},
+                                        @{nameof(transaction.AffectedAccount.Id)}
+                                    )
                                     RETURNING id";
 
             try
@@ -23,6 +30,8 @@ namespace BokurApi.Repositories
                         transaction.Name,
                         transaction.Value,
                         transaction.Date,
+                        transaction.ParentId,
+                        transaction.AffectedAccount?.Id,
                     });
             }
             catch (PostgresException exception)
@@ -62,6 +71,63 @@ namespace BokurApi.Repositories
                 });
         }
 
+        public async Task SetAffectedAccountAsync(int transactionId, int accountId)
+        {
+            if (accountId <= 0)
+                throw new ArgumentException("Invalid account id");
+
+            BokurAccount? account = await AccountRepository.Instance.GetByIdAsync(accountId);
+
+            if (account == null)
+                throw new ArgumentException($"No account with id {accountId} exists");
+
+            const string query = $@"UPDATE bokur_transaction SET affected_account = @{nameof(accountId)} WHERE id = @{nameof(transactionId)}";
+
+            using (NpgsqlConnection connection = await GetConnectionAsync())
+                await connection.ExecuteAsync(query, new { transactionId, accountId });
+        }
+
+        public async Task<bool> CreateTransferAsync(int parentTransactionId, int toAccountId, decimal amount)
+        {
+            BokurTransaction? parent = await GetByIdAsync(parentTransactionId);
+
+            if (parent == null)
+                throw new ArgumentException($"No transaction with id {parentTransactionId} exists");
+
+            if (parent.AffectedAccount == null)
+                throw new ArgumentException($"Parent transaction with id {parentTransactionId} has no affected account, can't transfer money from it");
+
+            BokurAccount fromAccount = parent.AffectedAccount;
+            BokurAccount? toAccount = await AccountRepository.Instance.GetByIdAsync(toAccountId);
+
+            if (toAccount == null)
+                throw new ArgumentException($"No account with id {toAccountId} exists");
+
+            if (fromAccount.Id == toAccount.Id)
+                throw new ArgumentException("From and to account cannot be the same");
+
+            if (amount <= 0)
+                throw new ArgumentException("Amount must be greater than 0");
+
+            BokurTransaction outTransaction = new BokurTransaction(0, null, $"Transfer from {fromAccount.Name}", amount * -1, parent.Date, null, fromAccount, false, parent.Id, false);
+            BokurTransaction inTransaction = new BokurTransaction(0, null, $"Transfer to {toAccount.Name}", amount, parent.Date, null, toAccount, false, parent.Id, false);
+
+            int outId = await CreateAsync(outTransaction);
+            int inId = await CreateAsync(inTransaction);
+
+            await SetHasChildrenAsync(parentTransactionId, true);
+
+            return outId != 0 && inId != 0;
+        }
+
+        private async Task SetHasChildrenAsync(int transactionId, bool newValue)
+        {
+            const string query = $@"UPDATE bokur_transaction SET has_children = @{nameof(newValue)} WHERE id = @{nameof(transactionId)}";
+
+            using (NpgsqlConnection connection = await GetConnectionAsync())
+                await connection.ExecuteAsync(query, new { transactionId, newValue });
+        }
+
         public async Task RemoveAssociatedFile(int transactionId)
         {
             const string query = @"UPDATE bokur_transaction SET associated_file_name = NULL WHERE id = @TransactionId";
@@ -76,7 +142,7 @@ namespace BokurApi.Repositories
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
             {
-                return await connection.GetSingleOrDefaultAsync<BokurTransaction>(query, new { Id = id }, new Dictionary<string, Func<object?, Task<object?>>>()
+                BokurTransaction? transaction = await connection.GetSingleOrDefaultAsync<BokurTransaction>(query, new { Id = id }, new Dictionary<string, Func<object?, Task<object?>>>()
                 {
                     { // use a manual parameter lookup for affected account because it's just an id from the database but we want to use a cached object
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
@@ -86,12 +152,22 @@ namespace BokurApi.Repositories
                         }
                     }
                 });
+
+                if (transaction == null) return null;
+
+                if (transaction.HasChildren)
+                    transaction.Children = await GetAllChildrenForParentAsync(connection, transaction.Id);
+
+                return transaction;
             }
         }
 
         public async Task<List<BokurTransaction>> GetAllThatRequiresActionAsync()
         {
-            const string query = @"SELECT * FROM bokur_transaction WHERE ignored = FALSE AND (associated_file_name IS NULL OR affected_account IS NULL)";
+            const string query = @"SELECT * FROM bokur_transaction WHERE
+                                   external_id IS NOT NULL AND 
+                                   ignored = FALSE
+                                   AND (associated_file_name IS NULL OR affected_account IS NULL)";
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
                 return await connection.GetAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
@@ -106,12 +182,33 @@ namespace BokurApi.Repositories
                 });
         }
 
-        public async Task<List<BokurTransaction>> GetAllAsync()
+        public async Task<List<BokurTransaction>> GetAllChildrenForParentAsync(NpgsqlConnection connection, int parentId)
         {
-            const string query = @"SELECT * FROM bokur_transaction";
+            const string query = $"SELECT * FROM bokur_transaction WHERE parent_transaction = @{nameof(parentId)}";
+
+            return await connection.GetAsync<BokurTransaction>(query, new { parentId }, new Dictionary<string, Func<object?, Task<object?>>>()
+            {
+                {
+                    nameof(BokurTransaction.AffectedAccount), async (x) =>
+                    {
+                        if(x == null) return null;
+                        return await AccountRepository.Instance.GetByIdAsync((int)x);
+                    }
+                }
+            });
+        }
+
+        public async Task<List<BokurTransaction>> GetAllAsync(int pageSize = 10, int page = 0)
+        {
+            const string query = @"SELECT * FROM bokur_transaction WHERE parent_transaction IS NULL
+                                   ORDER BY date DESC
+                                   OFFSET @skip
+                                   LIMIT @take";
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
-                return await connection.GetAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
+            {
+                List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { skip = page * pageSize, take = pageSize },
+                new Dictionary<string, Func<object?, Task<object?>>>()
                 {
                     {
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
@@ -121,6 +218,12 @@ namespace BokurApi.Repositories
                         }
                     }
                 });
+
+                foreach (BokurTransaction transaction in result.Where(x => x.HasChildren))
+                    transaction.Children = await GetAllChildrenForParentAsync(connection, transaction.Id);
+
+                return result;
+            }
         }
 
         public async Task<List<string>> GetExistingExternalIdsAsync(DateTime? startDate = null, DateTime? endDate = null)
@@ -133,6 +236,39 @@ namespace BokurApi.Repositories
             using (NpgsqlConnection connection = await GetConnectionAsync())
             {
                 return (await connection.GetAsync<string>(query, new { startDate, endDate }));
+            }
+        }
+
+        public async Task<List<AccountSummary>> GetSummaryAsync()
+        {
+            const string query = @"SELECT affected_account AS account, SUM(value) AS balance FROM bokur_transaction
+                                   WHERE affected_account IS NOT NULL
+                                   AND ignored = FALSE
+                                   GROUP BY affected_account";
+
+            using (NpgsqlConnection connection = await GetConnectionAsync())
+            {
+                List<AccountSummary> result = await connection.GetAsync<AccountSummary>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
+                {
+                    {
+                        "account", async (x) =>
+                        {
+                            if(x == null) return null;
+                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                        }
+                    }
+                });
+
+                List<BokurAccount> allAccounts = await AccountRepository.Instance.GetAllAsync();
+                foreach(BokurAccount account in allAccounts)
+                {
+                    if(result.Any(x => x.Account.Id == account.Id))
+                        continue;
+
+                    result.Add(new AccountSummary(account, 0));
+                }
+
+                return result;
             }
         }
     }

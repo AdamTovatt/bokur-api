@@ -50,7 +50,7 @@ namespace BokurApi.Controllers
             List<BokurTransaction> transactions = BokurTransaction.GetList(nordigenTransactions);
             List<string> existingIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
 
-            List<BokurTransaction> newTransactions = transactions.Where(x => !existingIds.Contains(x.ExternalId)).ToList().RemoveInternalTransactions();
+            List<BokurTransaction> newTransactions = transactions.Where(x => x.ExternalId != null && !existingIds.Contains(x.ExternalId)).ToList().RemoveInternalTransactions();
 
             foreach (BokurTransaction transaction in newTransactions)
                 await TransactionRepository.Instance.CreateAsync(transaction);
@@ -119,6 +119,19 @@ namespace BokurApi.Controllers
                 return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
 
             return new ApiResponse(transaction);
+        }
+
+        [HttpPost("create-child-transfer")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        public async Task<ObjectResult> CreateSplitTransaction(int parentTransactionId, int toAccountId, decimal amount)
+        {
+            bool succes = await TransactionRepository.Instance.CreateTransferAsync(parentTransactionId, toAccountId, amount);
+
+            if(!succes)
+                return new ApiResponse("Error when creating transfer", HttpStatusCode.InternalServerError);
+
+            return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
         //[Authorize(AuthorizationRole.Admin)]

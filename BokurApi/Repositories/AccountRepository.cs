@@ -47,13 +47,16 @@ namespace BokurApi.Repositories
             }
         }
 
-        public async Task<BokurAccount> GetByIdAsync(int id)
+        public async Task<BokurAccount?> GetByIdAsync(int id)
         {
             if(accountsCache == null)
                 await GetAllAsync();
 
             if (accountsCache == null)
                 throw new Exception("AccountsCache was still nul after getting all accounts, this should not happen");
+
+            if (!accountsCache.ContainsKey(id))
+                return null;
 
             return accountsCache[id];
         }

@@ -10,6 +10,8 @@ namespace BokurApiTests.RepositoryTests
         [ClassInitialize]
         public static async Task Setup(TestContext context)
         {
+            await DatabaseHelper.CleanTable("bokur_account");
+            await DatabaseHelper.CleanTable("bokur_transaction");
             await AccountRepository.Instance.CreateAsync("Adam");
             await AccountRepository.Instance.CreateAsync("Oliver");
             await AccountRepository.Instance.CreateAsync("Gemensam");
@@ -98,6 +100,87 @@ namespace BokurApiTests.RepositoryTests
         }
 
         [TestMethod]
+        public async Task CreateTransferAndGetChildren()
+        {
+            await Create();
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+            Assert.IsFalse(transaction.HasChildren);
+
+            await TransactionRepository.Instance.SetAffectedAccountAsync(1, 3);
+
+            bool success = await TransactionRepository.Instance.CreateTransferAsync(1, 2, 100);
+
+            Assert.IsTrue(success);
+
+            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+            Assert.AreEqual(1, transaction.Id);
+            Assert.IsTrue(transaction.HasChildren);
+
+            Assert.AreEqual(2, transaction.Children?.Count);
+
+            success = await TransactionRepository.Instance.CreateTransferAsync(1, 1, 100);
+
+            Assert.IsTrue(success);
+
+            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+            Assert.AreEqual(1, transaction.Id);
+            Assert.IsTrue(transaction.HasChildren);
+
+            Assert.AreEqual(4, transaction.Children?.Count);
+
+            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllAsync();
+
+            Assert.AreEqual(2, transactions.Count);
+            Assert.IsTrue(transactions[0].HasChildren);
+            Assert.IsFalse(transactions[1].HasChildren);
+        }
+
+        [TestMethod]
+        public async Task GetAccountSummaryWithChildTransfers()
+        {
+            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction1);
+            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction2);
+            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction3);
+
+            List<AccountSummary> accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+
+            Assert.AreEqual(3, accountSummaries.Count);
+
+            foreach(AccountSummary summary in accountSummaries)
+                Assert.AreEqual(0, summary.Balance);
+
+            await TransactionRepository.Instance.SetAffectedAccountAsync(1, 1);
+            await TransactionRepository.Instance.SetAffectedAccountAsync(2, 2);
+            await TransactionRepository.Instance.SetAffectedAccountAsync(3, 3);
+
+            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+
+            Assert.AreEqual(3, accountSummaries.Count);
+
+            Assert.AreEqual(-21.34m, accountSummaries[0].Balance);
+            Assert.AreEqual(20000, accountSummaries[1].Balance);
+            Assert.AreEqual(-100, accountSummaries[2].Balance);
+
+            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries[0].Account.Id, 400);
+            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries[2].Account.Id, 200);
+
+            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+
+            Assert.AreEqual(3, accountSummaries.Count);
+
+            Assert.AreEqual(378.66m, accountSummaries[0].Balance);
+            Assert.AreEqual(19400, accountSummaries[1].Balance);
+            Assert.AreEqual(100, accountSummaries[2].Balance);
+        }
+
+        [TestMethod]
         public async Task Update()
         {
             await Create();
@@ -159,8 +242,8 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(2, externalIds.Count);
 
-            Assert.IsTrue(externalIds.Contains(TestDataProvider.BokurTransaction1.ExternalId));
-            Assert.IsTrue(externalIds.Contains(TestDataProvider.BokurTransaction2.ExternalId));
+            Assert.IsTrue(externalIds.Contains(TestDataProvider.BokurTransaction1.ExternalId!));
+            Assert.IsTrue(externalIds.Contains(TestDataProvider.BokurTransaction2.ExternalId!));
         }
     }
 }

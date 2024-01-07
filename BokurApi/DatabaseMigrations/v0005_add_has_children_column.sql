@@ -1,0 +1,1 @@
+ALTER TABLE bokur_transaction ADD COLUMN has_children BOOLEAN NOT NULL DEFAULT FALSE;

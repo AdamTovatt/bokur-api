@@ -119,7 +119,7 @@ namespace BokurApiTests.ControllerTests
                 objectResult = await controller.UploadFile(file, 1);
 
                 Assert.IsNotNull(objectResult);
-                Assert.AreEqual((int)HttpStatusCode.Conflict, objectResult.StatusCode);
+                Assert.AreEqual((int)HttpStatusCode.BadRequest, objectResult.StatusCode);
             }
         }
 

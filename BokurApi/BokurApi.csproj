@@ -14,6 +14,8 @@
     <None Remove="DatabaseMigrations\v0001_create_tables.sql" />
     <None Remove="DatabaseMigrations\v0002_add_accounts.sql" />
     <None Remove="DatabaseMigrations\v0003_create_file_table.sql" />
+    <None Remove="DatabaseMigrations\v0004_expand_transactions_table.sql" />
+    <None Remove="DatabaseMigrations\v0005_add_has_children_column.sql" />
   </ItemGroup>
 
   <ItemGroup>
@@ -21,6 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="DatabaseMigrations\v0005_add_has_children_column.sql" />
+    <EmbeddedResource Include="DatabaseMigrations\v0004_expand_transactions_table.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0003_create_file_table.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0002_add_accounts.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0001_create_tables.sql" />
@@ -42,6 +46,10 @@
     <PackageReference Include="Npgsql" Version="8.0.1" />
     <PackageReference Include="RobinTTY.NordigenApiClient" Version="6.1.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Models\RequestBodies\" />
   </ItemGroup>
 
 </Project>
