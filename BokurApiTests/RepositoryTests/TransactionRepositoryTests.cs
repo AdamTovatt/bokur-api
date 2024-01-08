@@ -14,7 +14,7 @@ namespace BokurApiTests.RepositoryTests
             await DatabaseHelper.CleanTable("bokur_transaction");
             await AccountRepository.Instance.CreateAsync("Adam");
             await AccountRepository.Instance.CreateAsync("Oliver");
-            await AccountRepository.Instance.CreateAsync("Gemensam");
+            await AccountRepository.Instance.CreateAsync("Shared");
         }
 
         [ClassCleanup]
@@ -145,9 +145,9 @@ namespace BokurApiTests.RepositoryTests
         [TestMethod]
         public async Task GetAccountSummaryWithChildTransfers()
         {
-            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction1);
-            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction2);
-            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction3);
+            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction1); // take 100
+            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction2); // take 21.34
+            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction3); // give 20000
 
             List<AccountSummary> accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
 
@@ -156,28 +156,66 @@ namespace BokurApiTests.RepositoryTests
             foreach(AccountSummary summary in accountSummaries)
                 Assert.AreEqual(0, summary.Balance);
 
-            await TransactionRepository.Instance.SetAffectedAccountAsync(1, 1);
-            await TransactionRepository.Instance.SetAffectedAccountAsync(2, 2);
-            await TransactionRepository.Instance.SetAffectedAccountAsync(3, 3);
+            await TransactionRepository.Instance.SetAffectedAccountAsync(1, 1); // assign the take 100 to Adam
+            await TransactionRepository.Instance.SetAffectedAccountAsync(2, 2); // assign the take 21.34 to Oliver
+            await TransactionRepository.Instance.SetAffectedAccountAsync(3, 3); // assign the give 20000 to Shared
 
             accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
 
             Assert.AreEqual(3, accountSummaries.Count);
 
-            Assert.AreEqual(-21.34m, accountSummaries[0].Balance);
-            Assert.AreEqual(20000, accountSummaries[1].Balance);
-            Assert.AreEqual(-100, accountSummaries[2].Balance);
+            Assert.AreEqual(-100, accountSummaries.TakeByAccount("Adam").Balance); // check that Adam has -100
+            Assert.AreEqual(-21.34m, accountSummaries.TakeByAccount("Oliver").Balance); // check that Oliver has -21.34
+            Assert.AreEqual(20000, accountSummaries.TakeByAccount("Shared").Balance); // check that Shared has 20000
 
-            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries[0].Account.Id, 400);
-            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries[2].Account.Id, 200);
+            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries.TakeAccountId("Oliver"), 400); // give 400 to Oliver
+            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries.TakeAccountId("Adam"), 200); // give 200 to Adam       (both from Shared)
+            // the above two lines should mean Shared lost 600
 
             accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
 
             Assert.AreEqual(3, accountSummaries.Count);
 
-            Assert.AreEqual(378.66m, accountSummaries[0].Balance);
-            Assert.AreEqual(19400, accountSummaries[1].Balance);
-            Assert.AreEqual(100, accountSummaries[2].Balance);
+            Assert.AreEqual(378.66m, accountSummaries.TakeByAccount("Oliver").Balance); // check that Oliver has -21.34 + 400 = 378.66
+            Assert.AreEqual(19400, accountSummaries.TakeByAccount("Shared").Balance); // check that Shared has 20000 - 600 = 19400
+            Assert.AreEqual(100, accountSummaries.TakeByAccount("Adam").Balance); // check that Adam has -100 + 200 = 100
+
+            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries.TakeAccountId("Oliver"), 576); // give 576 to Oliver from Shared
+
+            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+            Assert.AreEqual(3, accountSummaries.Count);
+
+            // Oliver had 378.66, so now he should have 378.66 + 576 = 954.66
+
+            Assert.AreEqual(954.66m, accountSummaries.TakeByAccount("Oliver").Balance); // check that Oliver has 954.66
+            Assert.AreEqual(18824, accountSummaries.TakeByAccount("Shared").Balance); // check that Shared has 19400 - 576 = 18824
+            Assert.AreEqual(100, accountSummaries.TakeByAccount("Adam").Balance); // check that Adam has 100
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(3);
+
+            Assert.IsNotNull(transaction);
+            Assert.IsNotNull(transaction.Children);
+
+            BokurTransaction singleSibling = transaction.Children.Last();
+
+            Assert.AreEqual(576, singleSibling.Value); // find the transaction that added 576 to Oliver
+
+            await TransactionRepository.Instance.DeleteTransactionAsync(singleSibling.Id);
+
+            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+
+            Assert.AreEqual(3, accountSummaries.Count);
+
+            Assert.AreEqual(378.66m, accountSummaries.TakeByAccount("Oliver").Balance);
+            Assert.AreEqual(19400, accountSummaries.TakeByAccount("Shared").Balance);
+            Assert.AreEqual(100, accountSummaries.TakeByAccount("Adam").Balance);
+
+            BokurTransaction? transaction2 = await TransactionRepository.Instance.GetByIdAsync(3);
+
+            Assert.IsNotNull(transaction2);
+            Assert.IsNotNull(transaction2.Children);
+
+            Assert.AreEqual(transaction2.Children.Count, transaction.Children.Count - 2);
         }
 
         [TestMethod]

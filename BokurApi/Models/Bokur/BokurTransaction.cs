@@ -15,6 +15,7 @@ namespace BokurApi.Models.Bokur
         public int? ParentId { get; set; }
         public bool HasChildren { get; set; }
         public List<BokurTransaction>? Children { get; set; }
+        public int? SiblingId { get; set; }
 
         public bool RequiresAction
         {
@@ -24,7 +25,18 @@ namespace BokurApi.Models.Bokur
             }
         }
 
-        public BokurTransaction(int id, string? externalId, string name, decimal value, DateTime date, string? associatedFileName, BokurAccount? affectedAccount, bool ignored, int? parentTransaction, bool hasChildren)
+        public BokurTransaction(
+            int id,
+            string? externalId,
+            string name,
+            decimal value,
+            DateTime date,
+            string? associatedFileName,
+            BokurAccount? affectedAccount,
+            bool ignored,
+            int? parent,
+            bool hasChildren,
+            int? sibling)
         {
             Id = id;
             Name = name;
@@ -34,8 +46,9 @@ namespace BokurApi.Models.Bokur
             AffectedAccount = affectedAccount;
             ExternalId = externalId;
             Ignored = ignored;
-            ParentId = parentTransaction;
+            ParentId = parent;
             HasChildren = hasChildren;
+            SiblingId = sibling;
         }
 
         public BokurTransaction(Transaction transaction)

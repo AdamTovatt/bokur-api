@@ -124,6 +124,25 @@ namespace BokurApiTests.ControllerTests
         }
 
         [TestMethod]
+        public async Task DeleteFile()
+        {
+            await UploadFile();
+
+            ObjectResult objectResult = await controller.DeleteTransactionFile(1);
+
+            Assert.IsNotNull(objectResult);
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+
+            Assert.IsNull(transaction.AssociatedFileName);
+
+            BokurFile? bokurFile = await FileManager.Instance.GetFileAsync("testFile.txt");
+            Assert.IsNull(bokurFile);
+        }
+
+        [TestMethod]
         public async Task DownloadFile()
         {
             await UploadFile();

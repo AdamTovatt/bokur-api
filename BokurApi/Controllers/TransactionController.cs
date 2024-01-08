@@ -97,6 +97,31 @@ namespace BokurApi.Controllers
             return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
+        [HttpDelete]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> DeleteTransactionFile(int transactionId)
+        {
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+
+            if(transaction == null)
+                return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
+
+            if(transaction.AssociatedFileName == null)
+                return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
+
+            bool deleteFileResult = await FileManager.Instance.DeleteFileAsync(transaction.AssociatedFileName);
+
+            if (!deleteFileResult)
+                return new ApiResponse("Error when deleting file", HttpStatusCode.InternalServerError);
+
+            transaction.AssociatedFileName = null;
+
+            await TransactionRepository.Instance.RemoveAssociatedFileAsync(transaction.Id);
+
+            return new ApiResponse("ok");
+        }
+
         [Authorize(AuthorizationRole.Admin)]
         [HttpPut("update-single")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
