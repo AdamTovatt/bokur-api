@@ -28,6 +28,10 @@ namespace BokurApiTests.ControllerTests
             {
                 await TransactionRepository.Instance.CreateAsync(transaction);
             }
+
+            await AccountRepository.Instance.CreateAsync("Adam");
+            await AccountRepository.Instance.CreateAsync("Oliver");
+            await AccountRepository.Instance.CreateAsync("Shared");
         }
 
         [ClassCleanup]
@@ -35,6 +39,7 @@ namespace BokurApiTests.ControllerTests
         {
             await DatabaseHelper.CleanTable("bokur_transaction");
             await DatabaseHelper.CleanTable("stored_file");
+            await DatabaseHelper.CleanTable("bokur_account");
         }
 
         [TestInitialize]
@@ -91,6 +96,29 @@ namespace BokurApiTests.ControllerTests
             Assert.AreEqual(TestDataProvider.BokurTransaction1.Date, transaction.Date);
             Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transaction.ExternalId);
             Assert.AreEqual(TestDataProvider.BokurTransaction1.AffectedAccount, transaction.AffectedAccount);
+
+            AccountController accountController = new AccountController();
+
+            ObjectResult accountsResult = await accountController.GetAllAccounts();
+
+            Assert.IsNotNull(accountsResult);
+            Assert.IsNotNull(accountsResult.Value);
+
+            List<BokurAccount> accounts = (List<BokurAccount>)accountsResult.Value;
+
+            Assert.AreEqual(3, accounts.Count);
+
+            transaction.AffectedAccount = accounts.First(x => x.Name == "Oliver");
+
+            objectResult = await controller.UpdateSingle(transaction);
+
+            Assert.IsNotNull(objectResult);
+
+            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+
+            Assert.AreEqual("Oliver", transaction.AffectedAccount?.Name);
         }
 
         [TestMethod]
