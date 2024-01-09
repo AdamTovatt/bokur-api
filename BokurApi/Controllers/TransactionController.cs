@@ -3,6 +3,7 @@ using BokurApi.Managers.Files.Postgres;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models;
 using BokurApi.Models.Bokur;
+using BokurApi.Models.Exceptions;
 using BokurApi.Models.Http;
 using BokurApi.RateLimiting;
 using BokurApi.Repositories;
@@ -14,7 +15,7 @@ using System.Net;
 namespace BokurApi.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("transaction")]
     public class TransactionController : ControllerBase
     {
         public static DateTime? DefaultStartTime = new DateTime(2024, 1, 1); // never include transactions before this date
@@ -41,7 +42,7 @@ namespace BokurApi.Controllers
             Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
 
             if (requisition == null)
-                return new ApiResponse("No linked requisition was found. One has to be created.", HttpStatusCode.BadRequest);
+                return new ApiResponse("No linked requisition was found. One has to be created.", HttpStatusCode.FailedDependency);
 
             if (startDate == null)
                 startDate = DefaultStartTime;
@@ -58,11 +59,150 @@ namespace BokurApi.Controllers
             return new ApiResponse(newTransactions);
         }
 
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpGet("requisition/days-left")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> GetRequisitionDaysLeft()
+        {
+            Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
+
+            int daysLeft = 0;
+
+            if (requisition != null)
+                daysLeft = 90 - (int)Math.Ceiling((DateTime.Now - requisition.Created).TotalDays);
+
+            return new ApiResponse(daysLeft);
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpGet("summary-of-all")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(List<AccountSummary>), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> GetSummaryOfAll()
+        {
+            List<AccountSummary> summary = await TransactionRepository.Instance.GetSummaryAsync();
+
+            return new ApiResponse(summary);
+        }
+
         [Authorize(AuthorizationRole.Admin)]
-        [HttpPut("upload-file")]
+        [HttpPut("update")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> UpdateSingle([FromBody] BokurTransaction transaction)
+        {
+            await TransactionRepository.Instance.UpdateAsync(transaction);
+            return new ApiResponse("ok");
+        }
+
+        [Authorize(AuthorizationRole.Admin)]
+        [HttpGet("{transactionId}")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(BokurTransaction), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> GetSingle(int transactionId)
+        {
+            if (transactionId <= 0)
+                return new ApiResponse("Non zero positive integer transactionId must be provided", HttpStatusCode.BadRequest);
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+
+            if (transaction == null)
+                return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
+
+            return new ApiResponse(transaction);
+        }
+
+        [HttpPost("transfer/create")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
-        public async Task<ObjectResult> UploadFile(IFormFile file, int transactionId)
+        public async Task<ObjectResult> CreateTransfer(int parentTransactionId, int toAccountId, decimal amount)
+        {
+            bool succes = await TransactionRepository.Instance.CreateTransferAsync(parentTransactionId, toAccountId, amount);
+
+            if (!succes)
+                return new ApiResponse("Error when creating transfer", HttpStatusCode.InternalServerError);
+
+            return new ApiResponse("ok", HttpStatusCode.Created);
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpGet("get-all-that-requires-action")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> GetAllThatRequiresAction()
+        {
+            return new ApiResponse(await TransactionRepository.Instance.GetAllThatRequiresActionAsync());
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpGet("get-all")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> GetAll(int pageSize = 10, int page = 0)
+        {
+            return new ApiResponse(await TransactionRepository.Instance.GetAllAsync(pageSize, page));
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpPut("{transactionId}/delete")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> DeleteTransaction(int transaction)
+        {
+            try
+            {
+                await TransactionRepository.Instance.DeleteTransactionAsync(transaction);
+
+                return new ApiResponse("ok", HttpStatusCode.OK);
+            }
+            catch (ApiException exception)
+            {
+                return exception.Response;
+            }
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpPut("{transactionId}/set-account")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> CreateTransfer(int transaction, int accountId)
+        {
+            try
+            {
+                await TransactionRepository.Instance.SetAffectedAccountAsync(transaction, accountId);
+
+                return new ApiResponse("ok", HttpStatusCode.OK);
+            }
+            catch (ApiException exception)
+            {
+                return exception.Response;
+            }
+        }
+
+        //[Authorize(AuthorizationRole.Admin)]
+        [HttpPut("{transactionId}/set-amount")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> CreateTransfer(int transaction, decimal amount)
+        {
+            try
+            {
+                await TransactionRepository.Instance.SetTransactionValueAsync(transaction, amount);
+
+                return new ApiResponse("ok", HttpStatusCode.OK);
+            }
+            catch (ApiException exception)
+            {
+                return exception.Response;
+            }
+        }
+
+        [Authorize(AuthorizationRole.Admin)]
+        [HttpPut("{transactionId}/file/upload")]
+        [Limit(MaxRequests = 20, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        public async Task<ObjectResult> UploadTransactionFile(IFormFile file, int transactionId)
         {
             if (file == null)
                 return new ApiResponse("No file was provided in the request, should be IFormFile", HttpStatusCode.BadRequest);
@@ -97,17 +237,17 @@ namespace BokurApi.Controllers
             return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
-        [HttpDelete]
+        [HttpDelete("{transactionId}/file/delete")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> DeleteTransactionFile(int transactionId)
         {
             BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
 
-            if(transaction == null)
+            if (transaction == null)
                 return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
 
-            if(transaction.AssociatedFileName == null)
+            if (transaction.AssociatedFileName == null)
                 return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
 
             bool deleteFileResult = await FileManager.Instance.DeleteFileAsync(transaction.AssociatedFileName);
@@ -123,104 +263,31 @@ namespace BokurApi.Controllers
         }
 
         [Authorize(AuthorizationRole.Admin)]
-        [HttpPut("update-single")]
+        [HttpGet("{transactionId}/file/download")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> UpdateSingle(BokurTransaction transaction)
+        [ProducesResponseType(typeof(File), (int)HttpStatusCode.OK)]
+        public async Task<IActionResult> DownloadTransactionFile(int transactionId)
         {
-            await TransactionRepository.Instance.UpdateAsync(transaction);
-            return new ApiResponse("ok");
-        }
+            if (transactionId <= 0)
+                return new ApiResponse("Non zero positive integer transactionId must be provided", HttpStatusCode.BadRequest);
 
-        [Authorize(AuthorizationRole.Admin)]
-        [HttpPut("get-single")]
-        [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(BokurTransaction), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> GetSingle(int transactionId)
-        {
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync((int)transactionId);
 
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
 
-            return new ApiResponse(transaction);
-        }
+            if (transaction.AssociatedFileName == null)
+                return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
 
-        [HttpPost("create-child-transfer")]
-        [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
-        public async Task<ObjectResult> CreateSplitTransaction(int parentTransactionId, int toAccountId, decimal amount)
-        {
-            bool succes = await TransactionRepository.Instance.CreateTransferAsync(parentTransactionId, toAccountId, amount);
+            BokurFile? file = await FileManager.Instance.GetFileAsync(transaction.AssociatedFileName);
 
-            if(!succes)
-                return new ApiResponse("Error when creating transfer", HttpStatusCode.InternalServerError);
+            if (file == null)
+                return new ApiResponse($"No file could be found for transaction with id {transactionId} and filename {transaction.AssociatedFileName}", HttpStatusCode.BadRequest);
 
-            return new ApiResponse("ok", HttpStatusCode.Created);
-        }
-
-        //[Authorize(AuthorizationRole.Admin)]
-        [HttpGet("get-all-that-requires-action")]
-        [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> GetAllThatRequiresAction()
-        {
-            return new ApiResponse(await TransactionRepository.Instance.GetAllThatRequiresActionAsync());
-        }
-
-        //[Authorize(AuthorizationRole.Admin)]
-        [HttpGet("get-all")]
-        [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> GetAll()
-        {
-            return new ApiResponse(await TransactionRepository.Instance.GetAllAsync());
-        }
-
-        [Authorize(AuthorizationRole.Admin)]
-        [HttpGet("download-file")]
-        [Limit(MaxRequests = 20, TimeWindow = 10)]
-        [ProducesResponseType(typeof(File), (int)HttpStatusCode.OK)]
-        public async Task<IActionResult> DownloadFile(int? transactionId = null, string? fileName = null)
-        {
-            if (transactionId == null && fileName == null)
-                return new ApiResponse("Either transactionId or fileName must be provided in query string", HttpStatusCode.BadRequest);
-
-            byte[]? bytes = null;
-
-            if (fileName != null)
-            {
-                BokurFile? file = await FileManager.Instance.GetFileAsync(fileName);
-
-                if(file == null)
-                    return new ApiResponse($"No file called {fileName} exists", HttpStatusCode.BadRequest);
-
-                fileName = file.Name;
-                bytes = file.Bytes;
-            }
-            else if(transactionId != null)
-            {
-                BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync((int)transactionId);
-
-                if(transaction == null)
-                    return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
-
-                if (transaction.AssociatedFileName == null)
-                    return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
-
-                BokurFile? file = await FileManager.Instance.GetFileAsync(transaction.AssociatedFileName);
-
-                if (file == null)
-                    return new ApiResponse($"No file called {fileName} exists", HttpStatusCode.BadRequest);
-
-                fileName = file.Name;
-                bytes = file.Bytes;
-            }
-
-            if(bytes == null)
+            if (file.Bytes == null)
                 return new ApiResponse("Error when getting file", HttpStatusCode.InternalServerError);
 
-            return File(bytes, "application/octet-stream", fileName);
+            return File(file.Bytes, "application/octet-stream", file.Name);
         }
     }
 }

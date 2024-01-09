@@ -2,6 +2,8 @@
 using BokurApi.Helpers;
 using Dapper;
 using Npgsql;
+using BokurApi.Models.Exceptions;
+using System.Net;
 
 namespace BokurApi.Repositories
 {
@@ -37,7 +39,7 @@ namespace BokurApi.Repositories
             catch (PostgresException exception)
             {
                 if (exception.SqlState == "23505")
-                    throw new ArgumentException($"Transaction with external id {transaction.ExternalId} already exists", exception);
+                    throw new ApiException($"Transaction with external id {transaction.ExternalId} already exists", HttpStatusCode.BadRequest);
                 else
                     throw;
             }
@@ -46,10 +48,10 @@ namespace BokurApi.Repositories
         public async Task UpdateAsync(BokurTransaction transaction)
         {
             if (transaction == null || transaction.Id == 0)
-                throw new ArgumentException("Invalid transaction object or missing transaction id");
+                throw new ApiException("Invalid transaction object or missing transaction id", HttpStatusCode.BadRequest);
 
             if (transaction.Name != null && transaction.Name.Length < 1)
-                throw new ArgumentException("Name cannot be less than 1 character");
+                throw new ApiException("Name cannot be less than 1 character", HttpStatusCode.BadRequest);
 
             const string query = @$"
                 UPDATE bokur_transaction
@@ -82,12 +84,12 @@ namespace BokurApi.Repositories
         public async Task SetAffectedAccountAsync(int transactionId, int accountId)
         {
             if (accountId <= 0)
-                throw new ArgumentException("Invalid account id");
+                throw new ApiException("Invalid account id", HttpStatusCode.BadRequest);
 
             BokurAccount? account = await AccountRepository.Instance.GetByIdAsync(accountId);
 
             if (account == null)
-                throw new ArgumentException($"No account with id {accountId} exists");
+                throw new ApiException($"No account with id {accountId} exists", HttpStatusCode.BadRequest);
 
             const string query = $@"UPDATE bokur_transaction SET affected_account = @{nameof(accountId)} WHERE id = @{nameof(transactionId)}";
 
@@ -100,22 +102,22 @@ namespace BokurApi.Repositories
             BokurTransaction? parent = await GetByIdAsync(parentTransactionId);
 
             if (parent == null)
-                throw new ArgumentException($"No transaction with id {parentTransactionId} exists");
+                throw new ApiException($"No transaction with id {parentTransactionId} exists", HttpStatusCode.BadRequest);
 
             if (parent.AffectedAccount == null)
-                throw new ArgumentException($"Parent transaction with id {parentTransactionId} has no affected account, can't transfer money from it");
+                throw new ApiException($"Parent transaction with id {parentTransactionId} has no affected account, can't transfer money from it", HttpStatusCode.BadRequest);
 
             BokurAccount fromAccount = parent.AffectedAccount;
             BokurAccount? toAccount = await AccountRepository.Instance.GetByIdAsync(toAccountId);
 
             if (toAccount == null)
-                throw new ArgumentException($"No account with id {toAccountId} exists");
+                throw new ApiException($"No account with id {toAccountId} exists", HttpStatusCode.BadRequest);
 
             if (fromAccount.Id == toAccount.Id)
-                throw new ArgumentException("From and to account cannot be the same");
+                throw new ApiException("From and to account cannot be the same", HttpStatusCode.BadRequest);
 
             if (amount <= 0)
-                throw new ArgumentException("Amount must be greater than 0");
+                throw new ApiException("Amount must be greater than 0", HttpStatusCode.BadRequest);
 
             BokurTransaction outTransaction = new BokurTransaction(0, null, $"Transfer from {fromAccount.Name}", amount * -1, parent.Date, null, fromAccount, false, parent.Id, false, null);
             BokurTransaction inTransaction = new BokurTransaction(0, null, $"Transfer to {toAccount.Name}", amount, parent.Date, null, toAccount, false, parent.Id, false, null);
@@ -136,10 +138,10 @@ namespace BokurApi.Repositories
             BokurTransaction? transaction = await GetByIdAsync(transactionId);
 
             if (transaction == null)
-                throw new Exception($"No transacstion with id {transactionId}, can't set value");
+                throw new ApiException($"No transacstion with id {transactionId}, can't set value", HttpStatusCode.BadRequest);
 
             if (transaction.ExternalId != null)
-                throw new Exception($"Transaction with id {transactionId} is a transaction from an external source, can't set value");
+                throw new ApiException($"Transaction with id {transactionId} is a transaction from an external source, can't set value", HttpStatusCode.BadRequest);
 
             if (transaction.SiblingId != null)
             {
@@ -161,10 +163,10 @@ namespace BokurApi.Repositories
             BokurTransaction? transaction = await GetByIdAsync(transactionId);
 
             if (transaction == null)
-                throw new Exception($"No transaction with id {transactionId} could be found");
+                throw new ApiException($"No transaction with id {transactionId} could be found", HttpStatusCode.BadRequest);
 
             if (transaction.ExternalId != null)
-                throw new Exception($"Transaction with id {transactionId} is a transaction from an external source, can't delete");
+                throw new ApiException($"Transaction with id {transactionId} is a transaction from an external source, can't delete", HttpStatusCode.BadRequest);
 
             if (transaction.SiblingId != null)
             {

@@ -130,7 +130,7 @@ namespace BokurApiTests.ControllerTests
                 stream.Write(bytes);
                 IFormFile file = new FormFile(stream, 0, bytes.Length, "testFile", "testFile.txt");
 
-                ObjectResult objectResult = await controller.UploadFile(file, 1);
+                ObjectResult objectResult = await controller.UploadTransactionFile(file, 1);
 
                 Assert.IsNotNull(objectResult);
 
@@ -144,7 +144,7 @@ namespace BokurApiTests.ControllerTests
 
                 Assert.IsNotNull(bokurFile);
 
-                objectResult = await controller.UploadFile(file, 1);
+                objectResult = await controller.UploadTransactionFile(file, 1);
 
                 Assert.IsNotNull(objectResult);
                 Assert.AreEqual((int)HttpStatusCode.BadRequest, objectResult.StatusCode);
@@ -174,7 +174,7 @@ namespace BokurApiTests.ControllerTests
         public async Task DownloadFile()
         {
             await UploadFile();
-            IActionResult result = await controller.DownloadFile(1);
+            IActionResult result = await controller.DownloadTransactionFile(1);
 
             Assert.IsNotNull(result);
 
