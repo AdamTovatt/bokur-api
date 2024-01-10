@@ -148,11 +148,11 @@ namespace BokurApi.Controllers
         [HttpPut("{transactionId}/delete")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> DeleteTransaction(int transaction)
+        public async Task<ObjectResult> DeleteTransaction(int transactionId)
         {
             try
             {
-                await TransactionRepository.Instance.DeleteTransactionAsync(transaction);
+                await TransactionRepository.Instance.DeleteTransactionAsync(transactionId);
 
                 return new ApiResponse("ok", HttpStatusCode.OK);
             }
@@ -166,11 +166,11 @@ namespace BokurApi.Controllers
         [HttpPut("{transactionId}/set-account")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> CreateTransfer(int transaction, int accountId)
+        public async Task<ObjectResult> CreateTransfer(int transactionId, int accountId)
         {
             try
             {
-                await TransactionRepository.Instance.SetAffectedAccountAsync(transaction, accountId);
+                await TransactionRepository.Instance.SetAffectedAccountAsync(transactionId, accountId);
 
                 return new ApiResponse("ok", HttpStatusCode.OK);
             }
@@ -184,11 +184,11 @@ namespace BokurApi.Controllers
         [HttpPut("{transactionId}/set-amount")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> CreateTransfer(int transaction, decimal amount)
+        public async Task<ObjectResult> CreateTransfer(int transactionId, decimal amount)
         {
             try
             {
-                await TransactionRepository.Instance.SetTransactionValueAsync(transaction, amount);
+                await TransactionRepository.Instance.SetTransactionValueAsync(transactionId, amount);
 
                 return new ApiResponse("ok", HttpStatusCode.OK);
             }
