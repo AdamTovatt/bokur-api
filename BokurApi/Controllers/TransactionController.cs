@@ -34,6 +34,7 @@ namespace BokurApi.Controllers
             return new ApiResponse(await NordigenManager.Instance.CreateRequsition(redirectUrl), HttpStatusCode.Created);
         }
 
+        [AllowAnonymous]
         [HttpPost("check-for-new-transactions")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
