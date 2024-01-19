@@ -13,11 +13,11 @@ namespace BokurApi
     {
         private const string version = "v1";
         private const string authDomain = $"https://sakur.eu.auth0.com/";
-        private const string authAudience = "https://sakurapi.se/careless-api/";
+        private const string authAudience = "https://sakurapi.se/bokur";
 
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
             EnvironmentHelper.TestMandatoryEnvironmentVariables(); // test that the mandatory environment variables exist, will throw an exception otherwise
 
