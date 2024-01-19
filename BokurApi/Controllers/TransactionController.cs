@@ -60,7 +60,7 @@ namespace BokurApi.Controllers
             return new ApiResponse(newTransactions);
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpGet("requisition/days-left")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(int), (int)HttpStatusCode.OK)]
@@ -76,7 +76,7 @@ namespace BokurApi.Controllers
             return new ApiResponse(daysLeft);
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpGet("summary-of-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<AccountSummary>), (int)HttpStatusCode.OK)]
@@ -127,7 +127,7 @@ namespace BokurApi.Controllers
             return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpGet("get-all-that-requires-action")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
@@ -136,7 +136,7 @@ namespace BokurApi.Controllers
             return new ApiResponse(await TransactionRepository.Instance.GetAllThatRequiresActionAsync());
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpGet("get-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
@@ -145,7 +145,7 @@ namespace BokurApi.Controllers
             return new ApiResponse(await TransactionRepository.Instance.GetAllAsync(pageSize, page));
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPut("{transactionId}/delete")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
@@ -163,7 +163,7 @@ namespace BokurApi.Controllers
             }
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPut("{transactionId}/set-account")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
@@ -181,7 +181,7 @@ namespace BokurApi.Controllers
             }
         }
 
-        //[Authorize(AuthorizationRole.Admin)]
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPut("{transactionId}/set-amount")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
