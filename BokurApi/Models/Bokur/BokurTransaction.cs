@@ -1,4 +1,5 @@
 ﻿using RobinTTY.NordigenApiClient.Models.Responses;
+using System.Text.Json.Serialization;
 
 namespace BokurApi.Models.Bokur
 {
@@ -25,6 +26,7 @@ namespace BokurApi.Models.Bokur
             }
         }
 
+        [JsonConstructor]
         public BokurTransaction(
             int id,
             string? externalId,
