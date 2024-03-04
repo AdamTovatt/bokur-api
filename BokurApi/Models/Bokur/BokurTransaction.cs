@@ -54,6 +54,32 @@ namespace BokurApi.Models.Bokur
             SiblingId = siblingId;
         }
 
+        public BokurTransaction(
+            int id,
+            string? externalId,
+            string name,
+            decimal value,
+            DateTime date,
+            string? associatedFileName,
+            BokurAccount? affectedAccount,
+            bool ignored,
+            int? parent,
+            bool hasChildren,
+            int? sibling)
+        {
+            Id = id;
+            Name = name;
+            Value = value;
+            Date = date;
+            AssociatedFileName = associatedFileName;
+            AffectedAccount = affectedAccount;
+            ExternalId = externalId;
+            Ignored = ignored;
+            ParentId = parent;
+            HasChildren = hasChildren;
+            SiblingId = sibling;
+        }
+
         public BokurTransaction(Transaction transaction)
         {
 
