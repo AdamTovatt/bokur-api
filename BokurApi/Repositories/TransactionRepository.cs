@@ -59,7 +59,8 @@ namespace BokurApi.Repositories
                     name = COALESCE(@{nameof(transaction.Name)}, name),
                     associated_file_name = COALESCE(@{nameof(transaction.AssociatedFileName)}, associated_file_name),
                     affected_account = COALESCE(@{nameof(transaction.AffectedAccount.Id)}, affected_account),
-                    ignored = COALESCE(@{nameof(transaction.Ignored)}, ignored)
+                    ignored = COALESCE(@{nameof(transaction.Ignored)}, ignored),
+                    ignore_file_requirement = COALESCE(@{nameof(transaction.IgnoreFileRequirement)}, ignore_file_requirement)
                 WHERE id = @transactionId";
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
@@ -70,6 +71,7 @@ namespace BokurApi.Repositories
                     transaction.AssociatedFileName,
                     transaction.AffectedAccount?.Id,
                     transaction.Ignored,
+                    transaction.IgnoreFileRequirement,
                 });
         }
 
@@ -119,8 +121,8 @@ namespace BokurApi.Repositories
             if (amount <= 0)
                 throw new ApiException("Amount must be greater than 0", HttpStatusCode.BadRequest);
 
-            BokurTransaction outTransaction = new BokurTransaction(0, null, $"Transfer from {fromAccount.Name}", amount * -1, parent.Date, null, fromAccount, false, parent.Id, false, null);
-            BokurTransaction inTransaction = new BokurTransaction(0, null, $"Transfer to {toAccount.Name}", amount, parent.Date, null, toAccount, false, parent.Id, false, null);
+            BokurTransaction outTransaction = new BokurTransaction(0, null, $"Transfer from {fromAccount.Name}", amount * -1, parent.Date, null, fromAccount, false, parent.Id, false, null, false);
+            BokurTransaction inTransaction = new BokurTransaction(0, null, $"Transfer to {toAccount.Name}", amount, parent.Date, null, toAccount, false, parent.Id, false, null, false);
 
             int outId = await CreateAsync(outTransaction);
             int inId = await CreateAsync(inTransaction);
@@ -249,7 +251,7 @@ namespace BokurApi.Repositories
             const string query = @"SELECT * FROM bokur_transaction WHERE
                                    external_id IS NOT NULL AND 
                                    ignored = FALSE
-                                   AND (associated_file_name IS NULL OR affected_account IS NULL)";
+                                   AND ((ignore_file_requirement = FALSE AND associated_file_name IS NULL) OR affected_account IS NULL)";
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
                 return await connection.GetAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()

@@ -97,6 +97,17 @@ namespace BokurApiTests.RepositoryTests
             transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
 
             Assert.AreEqual(1, transactions.Count);
+
+            transaction = transactions[0];
+
+            transaction.AffectedAccount = await AccountRepository.Instance.GetByIdAsync(2);
+            transaction.IgnoreFileRequirement = true;
+
+            await TransactionRepository.Instance.UpdateAsync(transaction);
+
+            transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+
+            Assert.AreEqual(0, transactions.Count);
         }
 
         [TestMethod]

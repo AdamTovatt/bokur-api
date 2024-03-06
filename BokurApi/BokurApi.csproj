@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>eb757546-decf-4229-855e-9b0c52d2d18d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +18,7 @@
     <None Remove="DatabaseMigrations\v0004_expand_transactions_table.sql" />
     <None Remove="DatabaseMigrations\v0005_add_has_children_column.sql" />
     <None Remove="DatabaseMigrations\v0006_add_sibling_column.sql" />
+    <None Remove="DatabaseMigrations\v0007_add_ignore_file_requirement_column.sql" />
   </ItemGroup>
 
   <ItemGroup>
@@ -24,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="DatabaseMigrations\v0007_add_ignore_file_requirement_column.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0006_add_sibling_column.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0005_add_has_children_column.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0004_expand_transactions_table.sql" />

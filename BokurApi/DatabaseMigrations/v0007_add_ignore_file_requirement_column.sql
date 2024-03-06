@@ -1,0 +1,1 @@
+ALTER TABLE bokur_transaction ADD COLUMN ignore_file_requirement BOOLEAN NOT NULL DEFAULT FALSE;

@@ -13,6 +13,7 @@ namespace BokurApi.Models.Bokur
         public string? AssociatedFileName { get; set; }
         public BokurAccount? AffectedAccount { get; set; }
         public bool Ignored { get; set; }
+        public bool IgnoreFileRequirement { get; set; }
         public int? ParentId { get; set; }
         public bool HasChildren { get; set; }
         public List<BokurTransaction>? Children { get; set; }
@@ -65,7 +66,8 @@ namespace BokurApi.Models.Bokur
             bool ignored,
             int? parent,
             bool hasChildren,
-            int? sibling)
+            int? sibling,
+            bool ignoreFileRequirement)
         {
             Id = id;
             Name = name;
@@ -78,6 +80,7 @@ namespace BokurApi.Models.Bokur
             ParentId = parent;
             HasChildren = hasChildren;
             SiblingId = sibling;
+            IgnoreFileRequirement = ignoreFileRequirement;
         }
 
         public BokurTransaction(Transaction transaction)
