@@ -21,6 +21,17 @@ namespace BokurApi.Controllers
         public static DateTime? DefaultStartTime = new DateTime(2024, 1, 1); // never include transactions before this date
 
         [Authorize(AuthorizationRole.Admin)]
+        [HttpPost("create-transaction")]
+        [Limit(MaxRequests = 1, TimeWindow = 3)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
+        public async Task<ObjectResult> CreateRequisition([FromBody] BokurTransaction bokurTransaction) // to create a new transaction (should almost never be used, only for manually inserting balance)
+        {
+            int createdId = await TransactionRepository.Instance.CreateAsync(bokurTransaction);
+
+            return new ApiResponse(createdId.ToString(), HttpStatusCode.Created);
+        }
+
+        [Authorize(AuthorizationRole.Admin)]
         [HttpPost("create-requsition")]
         [Limit(MaxRequests = 1, TimeWindow = 3)]
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
