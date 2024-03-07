@@ -40,6 +40,7 @@ namespace BokurApi.Models.Bokur
             int? parentId,
             bool hasChildren,
             int? siblingId,
+            bool ignoreFileRequirement,
             bool requiresAction = false)
         {
             Id = id;
@@ -53,6 +54,7 @@ namespace BokurApi.Models.Bokur
             ParentId = parentId;
             HasChildren = hasChildren;
             SiblingId = siblingId;
+            IgnoreFileRequirement = ignoreFileRequirement;
         }
 
         public BokurTransaction(
