@@ -19,6 +19,7 @@
     <None Remove="DatabaseMigrations\v0005_add_has_children_column.sql" />
     <None Remove="DatabaseMigrations\v0006_add_sibling_column.sql" />
     <None Remove="DatabaseMigrations\v0007_add_ignore_file_requirement_column.sql" />
+    <None Remove="DatabaseMigrations\v0008_add_email_column_to_account.sql" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="DatabaseMigrations\v0008_add_email_column_to_account.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0007_add_ignore_file_requirement_column.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0006_add_sibling_column.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0005_add_has_children_column.sql" />

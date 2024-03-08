@@ -1,4 +1,5 @@
 using BokurApi.Helpers;
+using BokurApi.Managers.Emails;
 using BokurApi.Managers.Files.Postgres;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models;
@@ -65,8 +66,18 @@ namespace BokurApi.Controllers
 
             List<BokurTransaction> newTransactions = transactions.Where(x => x.ExternalId != null && !existingIds.Contains(x.ExternalId)).ToList().RemoveInternalTransactions();
 
-            foreach (BokurTransaction transaction in newTransactions)
-                await TransactionRepository.Instance.CreateAsync(transaction);
+            List<int> createdTransactionIds = new List<int>();
+
+            foreach (BokurTransaction transaction in newTransactions) // create the new transactions
+                createdTransactionIds.Add(await TransactionRepository.Instance.CreateAsync(transaction));
+
+            foreach(int id in createdTransactionIds) // send email for each new transaction
+            {
+                BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(id);
+                
+                if (transaction != null)
+                    await  EmailManager.Instance.SendEmailAsync(transaction.GetNewTransactionEmail());
+            }
 
             return new ApiResponse(newTransactions);
         }

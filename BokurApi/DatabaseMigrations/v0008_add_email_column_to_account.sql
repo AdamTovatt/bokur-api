@@ -1,0 +1,1 @@
+ALTER TABLE bokur_account ADD COLUMN email VARCHAR;

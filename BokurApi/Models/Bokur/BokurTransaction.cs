@@ -113,5 +113,10 @@ namespace BokurApi.Models.Bokur
         {
             return $"{Name}: {Value.ToString("0.00")}";
         }
+
+        public BokurEmail GetNewTransactionEmail()
+        {
+
+        }
     }
 }
