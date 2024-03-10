@@ -1,4 +1,5 @@
 ﻿using BokurApi.Models.Bokur;
+using RobinTTY.NordigenApiClient.Models.Responses;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -58,6 +59,11 @@ namespace BokurApi.Helpers
             }
 
             return result;
+        }
+
+        public static int GetDaysLeft(this Requisition requisition)
+        {
+            return 90 - (int)Math.Ceiling((DateTime.Now - requisition.Created).TotalDays);
         }
     }
 }

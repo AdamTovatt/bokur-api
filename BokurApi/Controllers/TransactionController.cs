@@ -40,7 +40,7 @@ namespace BokurApi.Controllers
         {
             Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
 
-            if (requisition != null)
+            if (requisition != null && !(requisition.GetDaysLeft() < 60))
                 return new ApiResponse("A linked requisition already exists.", HttpStatusCode.Conflict);
 
             return new ApiResponse(await NordigenManager.Instance.CreateRequsition(redirectUrl), HttpStatusCode.Created);
@@ -111,7 +111,7 @@ namespace BokurApi.Controllers
             int daysLeft = 0;
 
             if (requisition != null)
-                daysLeft = 90 - (int)Math.Ceiling((DateTime.Now - requisition.Created).TotalDays);
+                daysLeft = requisition.GetDaysLeft();
 
             return new ApiResponse(daysLeft);
         }
