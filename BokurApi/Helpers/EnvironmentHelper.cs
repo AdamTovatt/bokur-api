@@ -1,5 +1,4 @@
 ﻿using Npgsql;
-using System.Net;
 using System.Text;
 
 namespace BokurApi.Helpers
@@ -13,6 +12,7 @@ namespace BokurApi.Helpers
         private const string UserLanguageName = "NORDIGEN_USER_LANGUAGE";
         private const string InternalReferenceName = "NORDIGEN_INTERNAL_REFERENCE";
         private const string ConnectionStringName = "DATABASE_URL";
+        private const string PostmarkTokenName = "POSTMARK_API_TOKEN";
 
         private static string? connectionString = null;
 
@@ -46,6 +46,11 @@ namespace BokurApi.Helpers
             return GetVariable(InternalReferenceName);
         }
 
+        public static string GetPostmarkToken()
+        {
+            return GetVariable(PostmarkTokenName);
+        }
+
         public static string GetConnectionString()
         {
             if(connectionString == null)
@@ -76,6 +81,7 @@ namespace BokurApi.Helpers
             GetUserLanguage();
             GetInternalReference();
             GetConnectionString();
+            GetPostmarkToken();
         }
 
         private class ConnectionStringBuilder

@@ -1,4 +1,7 @@
-﻿using RobinTTY.NordigenApiClient.Models.Responses;
+﻿using BokurApi.Helpers;
+using Microsoft.Extensions.FileProviders;
+using RobinTTY.NordigenApiClient.Models.Responses;
+using System.Reflection;
 using System.Text.Json.Serialization;
 
 namespace BokurApi.Models.Bokur
@@ -114,9 +117,23 @@ namespace BokurApi.Models.Bokur
             return $"{Name}: {Value.ToString("0.00")}";
         }
 
-        public BokurEmail GetNewTransactionEmail()
+        public BokurEmail CreateNewTransactionEmail(params string[] to)
         {
+            EmbeddedFileProvider embeddedFileProvider = new EmbeddedFileProvider(Assembly.GetExecutingAssembly());
+            string emailTemplate = new StreamReader(embeddedFileProvider.GetFileInfo("Resources/NewTransactionEmailTemplate.html").CreateReadStream()).ReadToEnd();
 
+            return new BokurEmail
+            (
+                content: emailTemplate.ApplyParameters(new
+                {
+                    transactionName = Name,
+                    transactionValue = $"{Value.ToString("0.00")} kr",
+                    transactionDate = Date.ToString("yyyy-MM-dd"),
+                    id = Id,
+                }),
+                subject: "New transaction in Bokur",
+                to: to
+            );
         }
     }
 }

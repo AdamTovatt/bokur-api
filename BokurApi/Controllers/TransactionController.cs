@@ -71,12 +71,30 @@ namespace BokurApi.Controllers
             foreach (BokurTransaction transaction in newTransactions) // create the new transactions
                 createdTransactionIds.Add(await TransactionRepository.Instance.CreateAsync(transaction));
 
-            foreach(int id in createdTransactionIds) // send email for each new transaction
+            if (createdTransactionIds.Count > 0)
             {
-                BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(id);
-                
-                if (transaction != null)
-                    await  EmailManager.Instance.SendEmailAsync(transaction.GetNewTransactionEmail());
+                List<BokurAccount> accounts = await AccountRepository.Instance.GetAllAsync();
+                if (accounts.Count > 0)
+                {
+                    string[] accountEmails = accounts.Where(x => x.Email != null).Select(x => x.Email).ToArray()!;
+
+                    const int maxEmails = 5;
+                    int sentEmails = 0;
+
+                    foreach (int id in createdTransactionIds) // send email for each new transaction
+                    {
+                        if (sentEmails >= maxEmails)
+                            break;
+
+                        BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(id);
+
+                        if (transaction != null)
+                        {
+                            await EmailManager.Instance.SendEmailAsync(transaction.CreateNewTransactionEmail(to: accountEmails));
+                            sentEmails++;
+                        }
+                    }
+                }
             }
 
             return new ApiResponse(newTransactions);

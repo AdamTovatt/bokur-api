@@ -1,3 +1,5 @@
+using BokurApi;
+using BokurApi.Managers.Emails;
 using BokurApi.Models.Bokur;
 using BokurApi.Repositories;
 using BokurApiTests.TestUtilities;
@@ -293,6 +295,23 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.IsTrue(externalIds.Contains(TestDataProvider.BokurTransaction1.ExternalId!));
             Assert.IsTrue(externalIds.Contains(TestDataProvider.BokurTransaction2.ExternalId!));
+        }
+
+        [TestMethod]
+        public async Task SendMockedEmail()
+        {
+            bool originalValue = GlobalSettings.MocketEnvironment;
+            GlobalSettings.MocketEnvironment = true;
+
+            await Create();
+
+            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+
+            Assert.IsNotNull(transaction);
+
+            await EmailManager.Instance.SendEmailAsync(transaction.CreateNewTransactionEmail("adam@sakur.se"));
+
+            GlobalSettings.MocketEnvironment = originalValue;
         }
     }
 }

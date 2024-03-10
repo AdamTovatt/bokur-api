@@ -1,3 +1,131 @@
-﻿<h1>A new transaction has been created</h1>
-
-<a href="https://bokur.sakurapi.se/transaction/{{id}}">Click here to go to it</a>
+﻿<!DOCTYPE html>
+<html lang="en" style="font-size: 16px">
+  <head>
+    <meta name="color-scheme" content="dark only" />
+    <meta name="supported-color-schemes" content="dark only" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+      shrink-to-fit="no"
+    />
+    <meta charset="UTF-8" />
+    <title>New transaction | Bokur</title>
+  </head>
+  <body
+    style="
+      width: 100%;
+      background-color: #23232a;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 1rem;
+      color: #ede4da;
+      margin: 0px;
+    "
+  >
+    <table
+      style="
+        width: 100vw;
+        max-width: 35rem;
+        margin-left: auto;
+        margin-right: auto;
+        border-collapse: collapse;
+      "
+    >
+      <tr style="background-color: #2a2a32">
+        <td style="padding: 2rem">
+          <a
+            style="
+              text-decoration: none;
+              color: #ede4da;
+              font-size: 1.2rem;
+              font-weight: 600;
+            "
+            href="https://bokur.sakurapi.se"
+            >Bokur</a
+          >
+        </td>
+        <td>
+          <p
+            style="
+              font-weight: 400;
+              text-align: right;
+              margin: 0px;
+              margin-right: 2rem;
+            "
+          >
+            Information from Bokur!
+          </p>
+        </td>
+      </tr>
+    </table>
+    <table
+      style="
+        width: 100vw;
+        max-width: 35rem;
+        margin-left: auto;
+        margin-right: auto;
+        padding-right: 1rem;
+        padding-left: 1rem;
+      "
+    >
+      <tr>
+        <th style="text-align: left">
+          <h1 style="margin-bottom: 0">A new transaction</h1>
+          <h2 style="margin-top: 0">was just created!</h2>
+        </th>
+      </tr>
+      <tr>
+        <th>
+          <p style="text-align: left; font-weight: 300">{{transactionName}}</p>
+          <p style="text-align: left; font-weight: 300">{{transactionValue}}</p>
+          <p style="text-align: left; font-weight: 300">{{transactionDate}}</p>
+        </th>
+      </tr>
+      <tr>
+        <th>
+          <p style="text-align: left; font-weight: 300; margin-top: 2rem">
+            The transaction is not yet complete.
+          </p>
+          <p
+            style="
+              color: #ede4da;
+              text-align: left;
+              font-weight: 300;
+              margin-top: 1rem;
+            "
+          >
+            An account needs to be assigned to it and a receipt needs to be
+            uploaded. Please click the button below to add these details.
+          </p>
+        </th>
+      </tr>
+      <tr>
+        <th>
+          <a
+            style="text-decoration: none"
+            href="https://bokur.sakurapi.se/transaction?id={{id}}"
+          >
+            <button
+              style="
+                background-color: #3c3c48;
+                border: none;
+                padding: 1rem;
+                border-radius: 12px;
+                box-shadow: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+                transition: box-shadow 0.01s, transform 0.01s;
+                color: #ede4da;
+                cursor: pointer;
+                font-size: 1rem;
+                width: 100%;
+              "
+            >
+              Add details to transaction
+            </button>
+          </a>
+        </th>
+      </tr>
+      <tr>
+        <td><div style="min-height: 4rem"></div></td>
+      </tr>
+    </table>
+  </body>
+</html>

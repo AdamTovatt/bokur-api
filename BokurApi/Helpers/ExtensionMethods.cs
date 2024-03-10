@@ -1,4 +1,5 @@
 ﻿using BokurApi.Models.Bokur;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace BokurApi.Helpers
@@ -33,6 +34,30 @@ namespace BokurApi.Helpers
             if (nullableDateTime == null) return null;
             DateTime dateTime = (DateTime)nullableDateTime;
             return new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day);
+        }
+
+        public static string ApplyParameters(this string text, params object[]? parameters)
+        {
+            if (parameters == null || !text.Contains('{'))
+                return text;
+
+            string result = text;
+
+            foreach (object parameter in parameters)
+            {
+                foreach (PropertyInfo propertyInfo in parameter.GetType().GetProperties())
+                {
+                    string propertyName = propertyInfo.Name;
+                    object? propertyValue = propertyInfo.GetValue(parameter);
+
+                    if (propertyValue == null)
+                        continue;
+
+                    result = result.Replace($"{{{{{propertyName}}}}}", propertyValue.ToString());
+                }
+            }
+
+            return result;
         }
     }
 }

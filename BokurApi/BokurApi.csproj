@@ -20,6 +20,7 @@
     <None Remove="DatabaseMigrations\v0006_add_sibling_column.sql" />
     <None Remove="DatabaseMigrations\v0007_add_ignore_file_requirement_column.sql" />
     <None Remove="DatabaseMigrations\v0008_add_email_column_to_account.sql" />
+    <None Remove="Resources\NewTransactionEmailTemplate.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -35,6 +36,7 @@
     <EmbeddedResource Include="DatabaseMigrations\v0003_create_file_table.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0002_add_accounts.sql" />
     <EmbeddedResource Include="DatabaseMigrations\v0001_create_tables.sql" />
+    <EmbeddedResource Include="Resources\NewTransactionEmailTemplate.html" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,6 +53,7 @@
     <PackageReference Include="dbup-postgresql" Version="5.0.37" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Npgsql" Version="8.0.1" />
+    <PackageReference Include="Postmark" Version="5.0.0" />
     <PackageReference Include="RobinTTY.NordigenApiClient" Version="6.1.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
   </ItemGroup>

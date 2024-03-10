@@ -23,7 +23,8 @@
         "NORDIGEN_REDIRECT_URL": "",
         "NORDIGEN_USER_LANGUAGE": "EN",
         "NORDIGEN_INTERNAL_REFERENCE": "",
-        "DATABASE_URL": ""
+        "DATABASE_URL": "",
+        "POSTMARK_API_TOKEN": ""
       }
     }
   }
