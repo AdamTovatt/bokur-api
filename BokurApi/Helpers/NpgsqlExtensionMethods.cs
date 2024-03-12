@@ -6,7 +6,7 @@ namespace BokurApi.Helpers
 {
     public static class NpgsqlExtensionMethods
     {
-        public static async Task<List<T>> GetAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null)
+        public static async Task<List<T>> GetAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null) where T : class?
         {
             using (NpgsqlCommand command = new NpgsqlCommand(query, connection))
             {
@@ -18,12 +18,12 @@ namespace BokurApi.Helpers
             }
         }
 
-        public static async Task<T?> GetSingleOrDefaultAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null)
+        public static async Task<T?> GetSingleOrDefaultAsync<T>(this NpgsqlConnection connection, string query, object? parameters, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup = null) where T : class?
         {
             return (await connection.GetAsync<T>(query, parameters, manualParameterLookup)).FirstOrDefault();
         }
-        
-        private static async Task<List<T>> GetObjectsAsync<T>(this NpgsqlDataReader reader, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup)
+
+        private static async Task<List<T>> GetObjectsAsync<T>(this NpgsqlDataReader reader, Dictionary<string, Func<object?, Task<object?>>>? manualParameterLookup) where T : class?
         {
             if (!await reader.ReadAsync())
                 return new List<T>();
@@ -42,7 +42,12 @@ namespace BokurApi.Helpers
                 string columnName = columns[0];
                 do
                 {
-                    result.Add((T)reader[columnName]);
+                    object columnValue = reader[columnName];
+
+                    if (columnValue == null || columnValue.GetType() == typeof(DBNull))
+                        result.Add(null!);
+                    else
+                        result.Add((T)reader[columnName]);
                 }
                 while (await reader.ReadAsync());
 

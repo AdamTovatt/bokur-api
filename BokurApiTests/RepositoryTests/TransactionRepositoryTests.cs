@@ -313,5 +313,16 @@ namespace BokurApiTests.RepositoryTests
 
             GlobalSettings.MocketEnvironment = originalValue;
         }
+
+        [TestMethod]
+        public async Task GetExternalIdsWhenNullValuesExist()
+        {
+            await TransactionRepository.Instance.CreateAsync(new BokurTransaction(0, "externalid", "Test Non Null", 20, DateTime.Now, null, null, false, null, false, null, false));
+            await TransactionRepository.Instance.CreateAsync(new BokurTransaction(0, null, "Test With Null", 20, DateTime.Now, null, null, false, null, false, null, false));
+
+            List<string> externalIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
+
+            Assert.AreEqual(1, externalIds.Count);
+        }
     }
 }

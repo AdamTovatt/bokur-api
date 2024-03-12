@@ -319,7 +319,7 @@ namespace BokurApi.Repositories
 
             using (NpgsqlConnection connection = await GetConnectionAsync())
             {
-                return (await connection.GetAsync<string>(query, new { startDate, endDate }));
+                return (await connection.GetAsync<string?>(query, new { startDate, endDate })).RemoveNullValues();
             }
         }
 

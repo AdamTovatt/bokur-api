@@ -65,5 +65,10 @@ namespace BokurApi.Helpers
         {
             return 90 - (int)Math.Ceiling((DateTime.Now - requisition.Created).TotalDays);
         }
+
+        public static List<string> RemoveNullValues(this IEnumerable<string?> originalValues)
+        {
+            return originalValues.Where(x => x != null).Select(x => x!).ToList();
+        }
     }
 }
