@@ -1,13 +1,9 @@
 ﻿using InvoiceGenerator.Models.Google;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using QuestPDF.Drawing;
 
 namespace InvoiceGenerator.Helpers
 {
-    internal class FontHelper
+    public class FontHelper
     {
         public string FamilyName { get; set; }
 
@@ -19,13 +15,13 @@ namespace InvoiceGenerator.Helpers
             FamilyName = familyName;
         }
 
-        public static async Task<FontHelper> FromFontFamilyNameAsync(string fontFamilyName)
+        private static async Task<FontHelper> FromFontFamilyNameAsync(string fontFamilyName)
         {
             FontListResponse fontListResponse = await ApiHelper.Instance.GetFontList(fontFamilyName);
             return new FontHelper(fontListResponse, fontFamilyName);
         }
 
-        public async Task<byte[]?> GetVariationAsync(string variationName)
+        private async Task<byte[]?> GetVariationAsync(string variationName)
         {
             if (fontList == null || fontList.Manifest == null || fontList.Manifest.FilesRefs == null)
                 return null;
@@ -36,6 +32,22 @@ namespace InvoiceGenerator.Helpers
                 return null;
 
             return await ApiHelper.Instance.GetSingleFontVariationAsync(fileRef.Url);
+        }
+
+        public static async Task SetupFont(string name, params string[] variations)
+        {
+            FontHelper font = await FontHelper.FromFontFamilyNameAsync(name);
+
+            foreach (string variation in variations)
+            {
+                byte[]? fontBytes = await font.GetVariationAsync(variation);
+
+                if (fontBytes == null)
+                    throw new Exception($"Font not found: {variation}");
+
+                using (MemoryStream stream = new MemoryStream(fontBytes))
+                    FontManager.RegisterFontWithCustomName($"{name}-{variation}", stream);
+            }
         }
     }
 }

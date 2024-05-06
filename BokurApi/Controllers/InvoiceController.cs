@@ -8,6 +8,11 @@ using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using InvoiceGenerator.Manager;
 using InvoiceGenerator.Models.Configuration;
+using InvoiceGenerator.Models.Data;
+using System.Text;
+using InvoiceGenerator.Helpers;
+using InvoiceGenerator.Models;
+using QuestPDF.Fluent;
 
 namespace BokurApi.Controllers
 {
@@ -19,18 +24,26 @@ namespace BokurApi.Controllers
         [HttpPost("generate")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<IFileHttpResult>), (int)HttpStatusCode.Created)]
-        public async Task<ObjectResult> GenerateInvoice([FromBody] GenerationConfiguration configuration)
+        public async Task<IActionResult> GenerateInvoice([FromBody] GenerationConfiguration configuration, IFormFile timeCsv)
         {
             InvoiceManager manager = new InvoiceManager(configuration.GeneralInformation);
 
-            TimeExport timeExport = TimeExport.FromCsv(File.ReadAllText(clockifyExportPath));
+            using (MemoryStream memoryStream = new MemoryStream())
+            {
+                await timeCsv.CopyToAsync(memoryStream);
 
-            SetupFont("Roboto", "Regular", "Medium", "Bold").Wait();
+                TimeExport timeExport = TimeExport.FromCsv(Encoding.UTF8.GetString(memoryStream.ToArray()));
 
-            Invoice invoice = manager.CreateInvoice(instanceConfiguration, timeExport);
-            invoice.GeneratePdf(invoice.FileName);
+                await FontHelper.SetupFont("Roboto", "Regular", "Medium", "Bold");
 
-            return new ApiResponse(await AccountRepository.Instance.GetAllAsync());
+                using (MemoryStream outputStream = new MemoryStream())
+                {
+                    Invoice invoice = manager.CreateInvoice(configuration.InvoiceInformation, timeExport);
+                    invoice.GeneratePdf(outputStream);
+
+                    return File(outputStream.ToArray(), "application/pdf", invoice.FileName);
+                }
+            }
         }
     }
 }
