@@ -38,7 +38,7 @@ namespace InvoiceGenerator.Helpers
 
         public static string ToCorrectLanguage(this string text, Invoice invoice)
         {
-            if (!invoice.GeneralInformation.Swedish)
+            if (!invoice.InvoiceInformation.Swedish)
                 return text;
 
             if (englishToSwedishDictionary.TryGetValue(text, out string? swedish))

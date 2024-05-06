@@ -24,7 +24,7 @@ namespace BokurApi.Controllers
         [HttpPost("generate")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<IFileHttpResult>), (int)HttpStatusCode.Created)]
-        public async Task<IActionResult> GenerateInvoice([FromBody] GenerationConfiguration configuration, IFormFile timeCsv)
+        public async Task<IActionResult> GenerateInvoice([FromForm] GenerationConfiguration configuration, IFormFile timeCsv)
         {
             InvoiceManager manager = new InvoiceManager(configuration.GeneralInformation);
 
