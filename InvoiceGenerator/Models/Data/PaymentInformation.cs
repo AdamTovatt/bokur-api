@@ -1,11 +1,15 @@
 ﻿using System.Text;
+using System.Text.Json.Serialization;
 
 namespace InvoiceGenerator.Models.Data
 {
     public class PaymentInformation
     {
+        [JsonPropertyName("bic")]
         public string? Bic { get; set; }
+        [JsonPropertyName("iban")]
         public string? Iban { get; set; }
+        [JsonPropertyName("bankgiroNumber")]
         public string? BankgiroNumber { get; set; }
 
         public string? FormattedIban

@@ -88,7 +88,10 @@ namespace InvoiceGenerator.Helpers
             }
             else
             {
-                throw new Exception($"Error when image with url: {url}");
+                if (response.StatusCode == HttpStatusCode.NotFound)
+                    throw new FileNotFoundException($"Image not found with url: {url}");
+                else
+                    throw new Exception($"Error when getting image with url: {url}");
             }
         }
     }
