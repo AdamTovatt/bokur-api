@@ -72,7 +72,7 @@ namespace BokurApi.Managers.Transactions
         /// <exception cref="Exception"></exception>
         public async Task<Requisition?> GetLinkedRequisition()
         {
-            NordigenApiResponse<ResponsePage<Requisition>, BasicError> response = await Client.RequisitionsEndpoint.GetRequisitions(0, 0);
+            NordigenApiResponse<ResponsePage<Requisition>, BasicResponse> response = await Client.RequisitionsEndpoint.GetRequisitions(0, 0);
 
             if (response.Error != null)
                 throw new Exception(response.Error.Summary);
@@ -100,8 +100,7 @@ namespace BokurApi.Managers.Transactions
             string internalReference = EnvironmentHelper.GetInternalReference();
             string language = EnvironmentHelper.GetUserLanguage();
 
-            CreateRequisitionRequest requisitionRequest = new CreateRequisitionRequest(new Uri(url), bankId, internalReference, language);
-            NordigenApiResponse<Requisition, CreateRequisitionError> response = await Client.RequisitionsEndpoint.CreateRequisition(requisitionRequest);
+            NordigenApiResponse<Requisition, CreateRequisitionError> response = await Client.RequisitionsEndpoint.CreateRequisition(bankId, new Uri(url), reference: internalReference, userLanguage: language);
 
             if (!response.IsSuccess)
                 throw new Exception(response.Error.Summary);
