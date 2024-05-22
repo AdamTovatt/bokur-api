@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -60,6 +60,10 @@
 
   <ItemGroup>
     <Folder Include="Models\RequestBodies\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\InvoiceGenerator\InvoiceGenerator.csproj" />
   </ItemGroup>
 
 </Project>

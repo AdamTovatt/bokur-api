@@ -4,3 +4,5 @@
 /BokurApi/Properties/launchSettings.json
 /BokurApiTests/bin/*
 /BokurApiTests/obj/*
+/InvoiceGenerator/bin/*
+/InvoiceGenerator/obj/*

@@ -5,7 +5,9 @@ VisualStudioVersion = 17.7.34221.43
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BokurApi", "BokurApi\BokurApi.csproj", "{0CF80D20-6B7D-44C5-A262-EA76EFC21FEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BokurApiTests", "BokurApiTests\BokurApiTests.csproj", "{5AEE619C-A00D-44BC-87F3-07EA7EDF18D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BokurApiTests", "BokurApiTests\BokurApiTests.csproj", "{5AEE619C-A00D-44BC-87F3-07EA7EDF18D6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InvoiceGenerator", "InvoiceGenerator\InvoiceGenerator.csproj", "{D35DFA0B-6E49-4DCF-9426-C239BC63D15B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{5AEE619C-A00D-44BC-87F3-07EA7EDF18D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5AEE619C-A00D-44BC-87F3-07EA7EDF18D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5AEE619C-A00D-44BC-87F3-07EA7EDF18D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D35DFA0B-6E49-4DCF-9426-C239BC63D15B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D35DFA0B-6E49-4DCF-9426-C239BC63D15B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D35DFA0B-6E49-4DCF-9426-C239BC63D15B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D35DFA0B-6E49-4DCF-9426-C239BC63D15B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
