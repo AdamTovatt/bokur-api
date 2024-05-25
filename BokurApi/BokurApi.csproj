@@ -51,6 +51,7 @@
     <PackageReference Include="Dapper" Version="2.1.35" />
     <PackageReference Include="dbup-core" Version="5.0.87" />
     <PackageReference Include="dbup-postgresql" Version="5.0.40" />
+    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="7.3.0.2" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.5" />
     <PackageReference Include="Npgsql" Version="8.0.3" />
     <PackageReference Include="Postmark" Version="5.0.0" />
