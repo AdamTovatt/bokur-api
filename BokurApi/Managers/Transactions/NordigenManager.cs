@@ -97,10 +97,10 @@ namespace BokurApi.Managers.Transactions
         {
             string url = redirectUrl == null ? EnvironmentHelper.GetRedirectUrl() : redirectUrl;
             string bankId = EnvironmentHelper.GetBankId();
-            string internalReference = EnvironmentHelper.GetInternalReference();
+            string internalReference = EnvironmentHelper.GetInternalReference(); // this is not used anymore, it should be null when sending to the api. This row can be removed
             string language = EnvironmentHelper.GetUserLanguage();
 
-            NordigenApiResponse<Requisition, CreateRequisitionError> response = await Client.RequisitionsEndpoint.CreateRequisition(bankId, new Uri(url), reference: internalReference, userLanguage: language);
+            NordigenApiResponse<Requisition, CreateRequisitionError> response = await Client.RequisitionsEndpoint.CreateRequisition(bankId, new Uri(url), reference: null, userLanguage: language);
 
             if (!response.IsSuccess)
                 throw new Exception(response.Error.Summary);
