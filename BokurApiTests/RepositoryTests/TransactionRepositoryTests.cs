@@ -64,7 +64,7 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllAsync();
+            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllWithoutParentAsync();
 
             Assert.AreEqual(2, transactions.Count);
 
@@ -77,6 +77,24 @@ namespace BokurApiTests.RepositoryTests
             Assert.AreEqual(TestDataProvider.BokurTransaction2.Name, transactions[1].Name);
             Assert.AreEqual(TestDataProvider.BokurTransaction2.Value, transactions[1].Value);
             Assert.AreEqual(TestDataProvider.BokurTransaction2.Date, transactions[1].Date);
+        }
+
+        [TestMethod]
+        public async Task GetAllForMonth()
+        {
+            await Create();
+
+            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllForMonthAsync(TestDataProvider.BokurTransaction1.Date);
+
+            Assert.AreEqual(1, transactions.Count);
+
+            Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transactions[0].ExternalId);
+
+            transactions = await TransactionRepository.Instance.GetAllForMonthAsync(TestDataProvider.BokurTransaction2.Date);
+
+            Assert.AreEqual(1, transactions.Count);
+
+            Assert.AreEqual(TestDataProvider.BokurTransaction2.ExternalId, transactions[0].ExternalId);
         }
 
         [TestMethod]
@@ -148,7 +166,7 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(4, transaction.Children?.Count);
 
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllAsync();
+            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllWithoutParentAsync();
 
             Assert.AreEqual(2, transactions.Count);
             Assert.IsTrue(transactions[0].HasChildren);
@@ -166,7 +184,7 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(3, accountSummaries.Count);
 
-            foreach(AccountSummary summary in accountSummaries)
+            foreach (AccountSummary summary in accountSummaries)
                 Assert.AreEqual(0, summary.Balance);
 
             await TransactionRepository.Instance.SetAffectedAccountAsync(1, 1); // assign the take 100 to Adam

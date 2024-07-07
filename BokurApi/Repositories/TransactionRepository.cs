@@ -4,6 +4,7 @@ using Dapper;
 using Npgsql;
 using BokurApi.Models.Exceptions;
 using System.Net;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BokurApi.Repositories
 {
@@ -282,7 +283,36 @@ namespace BokurApi.Repositories
             });
         }
 
-        public async Task<List<BokurTransaction>> GetAllAsync(int pageSize = 10, int page = 0)
+        public async Task<List<BokurTransaction>> GetAllForMonthAsync(DateTime month)
+        {
+            DateTime start = new DateTime(month.Year, month.Month, 1);
+            DateTime end = start.AddMonths(1).AddDays(-1);
+
+            const string query = @"SELECT * FROM bokur_transaction WHERE
+                                   date < @end AND date >= @start";
+
+            using (NpgsqlConnection connection = await GetConnectionAsync())
+            {
+                List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { start, end },
+                new Dictionary<string, Func<object?, Task<object?>>>()
+                {
+                    {
+                        nameof(BokurTransaction.AffectedAccount), async (x) =>
+                        {
+                            if(x == null) return null;
+                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                        }
+                    }
+                });
+
+                foreach (BokurTransaction transaction in result.Where(x => x.HasChildren))
+                    transaction.Children = await GetAllChildrenForParentAsync(connection, transaction.Id);
+
+                return result;
+            }
+        }
+
+        public async Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0)
         {
             const string query = @"SELECT * FROM bokur_transaction WHERE parent IS NULL
                                    ORDER BY date DESC

@@ -182,7 +182,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetAll(int pageSize = 10, int page = 0)
         {
-            return new ApiResponse(await TransactionRepository.Instance.GetAllAsync(pageSize, page));
+            return new ApiResponse(await TransactionRepository.Instance.GetAllWithoutParentAsync(pageSize, page));
         }
 
         [Authorize(AuthorizationRole.Admin)]
