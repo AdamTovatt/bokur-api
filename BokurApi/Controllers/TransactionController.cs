@@ -38,11 +38,6 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
         public async Task<ObjectResult> CreateRequisition(string? redirectUrl = null) // to create a new requisition
         {
-            Requisition? requisition = await NordigenManager.Instance.GetLinkedRequisition();
-
-            if (requisition != null && !(requisition.GetDaysLeft() < 60))
-                return new ApiResponse("A linked requisition already exists.", HttpStatusCode.Conflict);
-
             return new ApiResponse(await NordigenManager.Instance.CreateRequsition(redirectUrl), HttpStatusCode.Created);
         }
 
