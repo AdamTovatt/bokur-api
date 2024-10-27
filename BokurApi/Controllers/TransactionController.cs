@@ -64,7 +64,13 @@ namespace BokurApi.Controllers
             List<int> createdTransactionIds = new List<int>();
 
             foreach (BokurTransaction transaction in newTransactions) // create the new transactions
-                createdTransactionIds.Add(await TransactionRepository.Instance.CreateAsync(transaction));
+            {
+                try
+                {
+                    createdTransactionIds.Add(await TransactionRepository.Instance.CreateAsync(transaction));
+                }
+                catch (ApiException) { } // if the transaction already existed, just skip it, we don't need to add it again
+            }
 
             if (createdTransactionIds.Count > 0)
             {
