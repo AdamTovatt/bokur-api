@@ -37,6 +37,11 @@ namespace BokurApi.Helpers
             return new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day);
         }
 
+        public static DateOnly ToDateOnly(this DateTime dateTime)
+        {
+            return new DateOnly(dateTime.Year, dateTime.Month, dateTime.Day);
+        }
+
         public static string ApplyParameters(this string text, params object[]? parameters)
         {
             if (parameters == null || !text.Contains('{'))

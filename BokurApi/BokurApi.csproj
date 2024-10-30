@@ -52,12 +52,13 @@
     <PackageReference Include="dbup-core" Version="5.0.87" />
     <PackageReference Include="dbup-postgresql" Version="5.0.40" />
     <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="7.3.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.5" />
-    <PackageReference Include="Npgsql" Version="8.0.3" />
-    <PackageReference Include="Postmark" Version="5.0.0" />
-    <PackageReference Include="RobinTTY.NordigenApiClient" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Postmark" Version="5.2.0" />
+    <PackageReference Include="RobinTTY.NordigenApiClient" Version="10.1.0" />
+    <PackageReference Include="SakurWebApiUtilities" Version="1.2.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
 
   <ItemGroup>

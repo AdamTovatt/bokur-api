@@ -5,6 +5,7 @@ using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using Sakur.WebApiUtilities.TaskScheduling;
 using System.Security.Claims;
 
 namespace BokurApi
@@ -25,6 +26,10 @@ namespace BokurApi
 
             // Add services to the container.
             builder.Services.AddDistributedMemoryCache();
+
+            builder.Services.AddScheduledTasks(typeof(CheckForNewTransactionsTask));
+
+            builder.Services.AddLogging();
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
