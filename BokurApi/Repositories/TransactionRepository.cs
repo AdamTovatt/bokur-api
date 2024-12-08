@@ -312,6 +312,34 @@ namespace BokurApi.Repositories
             }
         }
 
+        public async Task<List<BokurTransaction>> GetTransactionsForExport(DateTime startDate, DateTime endDate)
+        {
+            const string query = @$"SELECT * FROM bokur_transaction
+                                   WHERE
+                                   parent IS NULL AND
+                                   sibling IS NULL AND
+                                   ignored = FALSE AND
+                                   date < @{nameof(endDate)} AND date >= @{nameof(startDate)}
+                                   ORDER BY date DESC";
+
+            using (NpgsqlConnection connection = await GetConnectionAsync())
+            {
+                List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { startDate, endDate },
+                new Dictionary<string, Func<object?, Task<object?>>>()
+                {
+                    {
+                        nameof(BokurTransaction.AffectedAccount), async (x) =>
+                        {
+                            if(x == null) return null;
+                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                        }
+                    }
+                });
+
+                return result;
+            }
+        }
+
         public async Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0)
         {
             const string query = @"SELECT * FROM bokur_transaction WHERE parent IS NULL
