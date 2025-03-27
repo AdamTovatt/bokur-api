@@ -90,7 +90,6 @@ namespace BokurApi.Models.Bokur
 
         public BokurTransaction(Transaction transaction)
         {
-
             NameBuilder name = NameBuilder.Create()
                 .Append(transaction.RemittanceInformationUnstructured)
                 .Append(transaction.DebtorName)
@@ -134,6 +133,21 @@ namespace BokurApi.Models.Bokur
                 subject: "New transaction in Bokur",
                 to: to
             );
+        }
+
+        public List<BokurTransaction> FindPossibleDuplicates(List<BokurTransaction> otherTransactions)
+        {
+            List<BokurTransaction> possibleDuplicates = new List<BokurTransaction>();
+
+            foreach (BokurTransaction otherTransaction in otherTransactions)
+            {
+                if (otherTransaction.Id == Id) continue;
+
+                if (otherTransaction.Date == Date && otherTransaction.Value == Value)
+                    possibleDuplicates.Add(otherTransaction);
+            }
+
+            return possibleDuplicates;
         }
     }
 }

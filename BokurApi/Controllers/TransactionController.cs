@@ -41,6 +41,27 @@ namespace BokurApi.Controllers
             return new ApiResponse(await NordigenManager.Instance.CreateRequsition(redirectUrl), HttpStatusCode.Created);
         }
 
+        [Authorize(AuthorizationRole.Admin)]
+        [HttpPut("clean-duplicate-transactions")]
+        [Limit(MaxRequests = 2, TimeWindow = 10)]
+        [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
+        public async Task<ObjectResult> CleanDuplicateTransactions()
+        {
+            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+
+            List<DuplicateTransactionPair> duplicatePairs = DuplicateTransactionPair.CreateListOfDuplicates(transactions);
+
+            foreach (DuplicateTransactionPair pair in duplicatePairs)
+            {
+                BokurTransaction transactionToRemove = pair.GetTransactionToRemove();
+
+                transactionToRemove.Ignored = true;
+                await TransactionRepository.Instance.UpdateAsync(transactionToRemove);
+            }
+
+            return new ApiResponse();
+        }
+
         [AllowAnonymous]
         [HttpPost("check-for-new-transactions")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
