@@ -1,10 +1,6 @@
 using BokurApi.Models.Bokur;
 using BokurApi.Repositories.Account;
 using BokurApi.Repositories.Transaction;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BokurApiTests.InMemoryRepositories
 {
@@ -163,13 +159,13 @@ namespace BokurApiTests.InMemoryRepositories
             List<BokurTransaction> result = new List<BokurTransaction>();
             int skip = page * pageSize;
             int take = pageSize;
-            
+
             List<BokurTransaction> filteredTransactions = transactions;
             if (accountId.HasValue)
             {
                 filteredTransactions = transactions.Where(t => t.AffectedAccount?.Id == accountId.Value).ToList();
             }
-            
+
             for (int i = skip; i < skip + take && i < filteredTransactions.Count; i++)
             {
                 result.Add(filteredTransactions[i]);

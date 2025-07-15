@@ -16,9 +16,9 @@ namespace BokurApi.Helpers
         {
             List<BokurTransaction> transactionsToRemove = new List<BokurTransaction>();
 
-            foreach(BokurTransaction transaction in transactions.Where(x => keyWord == null || x.Name.Contains(keyWord)))
+            foreach (BokurTransaction transaction in transactions.Where(x => keyWord == null || x.Name.Contains(keyWord)))
             {
-                if(transactions.Where(x => Math.Abs(x.Value) == Math.Abs(transaction.Value) && x.Date == transaction.Date).Count() == 2)
+                if (transactions.Where(x => Math.Abs(x.Value) == Math.Abs(transaction.Value) && x.Date == transaction.Date).Count() == 2)
                 {
                     transactionsToRemove.Add(transaction);
                 }

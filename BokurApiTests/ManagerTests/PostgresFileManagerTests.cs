@@ -1,8 +1,8 @@
-﻿using BokurApi.Managers.Files.Postgres;
+﻿using BokurApi.Helpers.DatabaseConnection;
+using BokurApi.Managers.Files.Postgres;
 using BokurApi.Models.Bokur;
-using BokurApiTests.TestUtilities;
 using BokurApi.Repositories.File;
-using BokurApi.Helpers.DatabaseConnection;
+using BokurApiTests.TestUtilities;
 
 namespace BokurApiTests.ManagerTests
 {

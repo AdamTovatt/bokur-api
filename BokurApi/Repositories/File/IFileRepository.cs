@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace BokurApi.Repositories.File
 {
     public interface IFileRepository

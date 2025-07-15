@@ -1,12 +1,11 @@
-﻿using BokurApi.Models.Bokur;
-using BokurApi.Helpers;
+﻿using BokurApi.Helpers;
+using BokurApi.Helpers.DatabaseConnection;
+using BokurApi.Models.Bokur;
+using BokurApi.Models.Exceptions;
+using BokurApi.Repositories.Account;
 using Dapper;
 using Npgsql;
-using BokurApi.Models.Exceptions;
 using System.Net;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-using BokurApi.Repositories.Account;
-using BokurApi.Helpers.DatabaseConnection;
 
 namespace BokurApi.Repositories.Transaction
 {

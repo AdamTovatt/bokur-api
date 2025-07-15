@@ -8,7 +8,7 @@ namespace BokurApiTests.TestUtilities
         {
             BokurTransaction? transaction = list.Where(x => x.Name == name).FirstOrDefault();
 
-            if(transaction == null)
+            if (transaction == null)
                 throw new Exception($"No transaction with name {name} found");
 
             return transaction;
@@ -18,7 +18,7 @@ namespace BokurApiTests.TestUtilities
         {
             AccountSummary? account = list.Where(x => x.Account.Name == name).FirstOrDefault();
 
-            if(account == null)
+            if (account == null)
                 throw new Exception($"No account with name {name} found");
 
             return account.Account.Id;
@@ -28,7 +28,7 @@ namespace BokurApiTests.TestUtilities
         {
             AccountSummary? account = list.Where(x => x.Account.Name == name).FirstOrDefault();
 
-            if(account == null)
+            if (account == null)
                 throw new Exception($"No account with name {name} found");
 
             return account;

@@ -2,9 +2,6 @@
 using BokurApi.Models.Bokur;
 using Dapper;
 using Npgsql;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace BokurApi.Repositories.Account
 {

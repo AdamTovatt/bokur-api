@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace InvoiceGenerator.Models.Data
+﻿namespace InvoiceGenerator.Models.Data
 {
     public class Time
     {
@@ -31,7 +25,7 @@ namespace InvoiceGenerator.Models.Data
         {
             Dictionary<string, Time> result = new Dictionary<string, Time>();
 
-            foreach(Time time in times)
+            foreach (Time time in times)
             {
                 if (time.Name == null)
                     throw new Exception("Found a time without a name, it is not possible to know who logged this time");

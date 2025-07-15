@@ -53,9 +53,8 @@ namespace BokurApi.Helpers
 
         public static string GetConnectionString()
         {
-            if(connectionString == null)
-             connectionString = GetConnectionStringFromUrl(GetVariable(ConnectionStringName), SslMode.Prefer);
-            
+            connectionString ??= GetConnectionStringFromUrl(GetVariable(ConnectionStringName), SslMode.Prefer);
+
             return connectionString;
         }
 

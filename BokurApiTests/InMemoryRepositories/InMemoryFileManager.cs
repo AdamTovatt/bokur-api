@@ -1,7 +1,5 @@
 using BokurApi.Managers.Files;
 using BokurApi.Models.Bokur;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace BokurApiTests.InMemoryRepositories
 {

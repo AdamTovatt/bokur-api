@@ -6,7 +6,7 @@ namespace BokurApi.RateLimiting
     {
         public async static Task<byte[]?> GetCachedValueAsync(this IDistributedCache cache, string key, CancellationToken token = default(CancellationToken))
         {
-            var result = await cache.GetAsync(key, token);
+            byte[]? result = await cache.GetAsync(key, token);
             return result;
         }
 

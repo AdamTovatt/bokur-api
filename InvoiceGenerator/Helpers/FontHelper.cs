@@ -28,7 +28,7 @@ namespace InvoiceGenerator.Helpers
 
             FileRef? fileRef = fontList.Manifest.FilesRefs.Find(x => x.VariationName == variationName.ToLower());
 
-            if(fileRef == null || fileRef.Url == null)
+            if (fileRef == null || fileRef.Url == null)
                 return null;
 
             return await ApiHelper.Instance.GetSingleFontVariationAsync(fileRef.Url);

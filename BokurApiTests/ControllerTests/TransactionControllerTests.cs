@@ -1,9 +1,6 @@
 ﻿using BokurApi.Controllers;
 using BokurApi.Helpers;
-using BokurApi.Managers.Files;
-using BokurApi.Managers.Files.Postgres;
 using BokurApi.Models.Bokur;
-using BokurApi.Repositories;
 using BokurApiTests.InMemoryRepositories;
 using BokurApiTests.TestUtilities;
 using Microsoft.AspNetCore.Http;

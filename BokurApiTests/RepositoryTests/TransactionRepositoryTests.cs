@@ -2,7 +2,6 @@ using BokurApi;
 using BokurApi.Helpers.DatabaseConnection;
 using BokurApi.Managers.Emails;
 using BokurApi.Models.Bokur;
-using BokurApi.Repositories;
 using BokurApi.Repositories.Account;
 using BokurApi.Repositories.Transaction;
 using BokurApiTests.TestUtilities;

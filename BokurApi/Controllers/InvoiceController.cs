@@ -1,18 +1,15 @@
-﻿using BokurApi.Models.Bokur;
-using BokurApi.Models.Http;
-using BokurApi.Models;
+﻿using BokurApi.Models;
 using BokurApi.RateLimiting;
-using BokurApi.Repositories;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Net;
+using InvoiceGenerator.Helpers;
 using InvoiceGenerator.Manager;
+using InvoiceGenerator.Models;
 using InvoiceGenerator.Models.Configuration;
 using InvoiceGenerator.Models.Data;
-using System.Text;
-using InvoiceGenerator.Helpers;
-using InvoiceGenerator.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using QuestPDF.Fluent;
+using System.Net;
+using System.Text;
 
 namespace BokurApi.Controllers
 {
@@ -77,7 +74,7 @@ namespace BokurApi.Controllers
                         PhoneNumber = "1234567890",
                     }
                 }
-            }, 
+            },
             new GeneralInformation()
             {
                 DefaultUnitPrice = 100,

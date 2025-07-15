@@ -1,5 +1,5 @@
-﻿using DbUp.Engine;
-using DbUp;
+﻿using DbUp;
+using DbUp.Engine;
 using System.Reflection;
 
 namespace BokurApi.Helpers

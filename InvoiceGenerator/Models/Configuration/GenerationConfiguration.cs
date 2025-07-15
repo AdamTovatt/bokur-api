@@ -28,7 +28,7 @@ namespace InvoiceGenerator.Models.Configuration
         {
             GenerationConfiguration? result = JsonSerializer.Deserialize<GenerationConfiguration>(json);
 
-            if(result == null)
+            if (result == null)
                 throw new JsonException($"Failed to deserialize json to GenerationConfiguration: {json}");
 
             return result;

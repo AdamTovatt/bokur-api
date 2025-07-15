@@ -2,7 +2,8 @@
 using BokurApi.Helpers.DatabaseConnection;
 using Dapper;
 using Npgsql;
-using System.Threading.Tasks;
+using BokurApi.Models.Exceptions;
+using System.Net;
 
 namespace BokurApi.Repositories.File
 {
@@ -32,8 +33,18 @@ namespace BokurApi.Repositories.File
                 INSERT INTO stored_file (name, content)
                 VALUES (@{nameof(fileName)}, @{nameof(fileData)})";
 
-            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
-                return await connection.ExecuteAsync(query, new { fileName, fileData }) > 0;
+            try
+            {
+                using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
+                    return await connection.ExecuteAsync(query, new { fileName, fileData }) > 0;
+            }
+            catch (PostgresException exception)
+            {
+                if (exception.SqlState == "23505")
+                    throw new ApiException($"A file with the name '{fileName}' already exists.", HttpStatusCode.BadRequest);
+                else
+                    throw;
+            }
         }
 
         public async Task<bool> DeleteFileAsync(string fileName)

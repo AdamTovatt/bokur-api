@@ -1,11 +1,9 @@
-﻿using RobinTTY.NordigenApiClient.Models;
-using RobinTTY.NordigenApiClient;
-using BokurApi.Helpers;
-using RobinTTY.NordigenApiClient.Models.Responses;
-using RobinTTY.NordigenApiClient.Models.Errors;
-using RobinTTY.NordigenApiClient.Models.Requests;
+﻿using BokurApi.Helpers;
 using BokurApi.Models.Exceptions;
-using System.Collections.Concurrent;
+using RobinTTY.NordigenApiClient;
+using RobinTTY.NordigenApiClient.Models;
+using RobinTTY.NordigenApiClient.Models.Errors;
+using RobinTTY.NordigenApiClient.Models.Responses;
 
 namespace BokurApi.Managers.Transactions
 {

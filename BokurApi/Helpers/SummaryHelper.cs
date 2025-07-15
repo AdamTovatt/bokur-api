@@ -1,9 +1,5 @@
 ﻿using BokurApi.Models.Bokur;
 using BokurApi.Repositories.Transaction;
-using RobinTTY.NordigenApiClient.Models.Responses;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace BokurApi.Helpers
 {

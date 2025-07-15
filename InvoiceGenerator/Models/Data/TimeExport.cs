@@ -1,11 +1,6 @@
 ﻿using InvoiceGenerator.Helpers;
 using InvoiceGenerator.Models.Configuration;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace InvoiceGenerator.Models.Data
 {
@@ -45,11 +40,11 @@ namespace InvoiceGenerator.Models.Data
                 decimal? amount = null;
 
                 if (userHeaderIndex != null) name = values[userHeaderIndex.Value].GetUnescapedValue();
-                if(projectHeaderIndex != null) project = values[projectHeaderIndex.Value].GetUnescapedValue();
-                if(clientHeaderIndex != null) client = values[clientHeaderIndex.Value].GetUnescapedValue();
-                if(amountHeaderIndex != null) amount = GetDecimal(values[amountHeaderIndex.Value].GetUnescapedValue());
-                if(descriptionHeaderIndex != null) description = values[descriptionHeaderIndex.Value].GetUnescapedValue();
-                
+                if (projectHeaderIndex != null) project = values[projectHeaderIndex.Value].GetUnescapedValue();
+                if (clientHeaderIndex != null) client = values[clientHeaderIndex.Value].GetUnescapedValue();
+                if (amountHeaderIndex != null) amount = GetDecimal(values[amountHeaderIndex.Value].GetUnescapedValue());
+                if (descriptionHeaderIndex != null) description = values[descriptionHeaderIndex.Value].GetUnescapedValue();
+
                 name = GetNullInsteadOfEmptyString(name); // if the string is empty we make it null instead
                 project = string.IsNullOrEmpty(project) ? null : project;
                 client = string.IsNullOrEmpty(client) ? null : client;
@@ -77,7 +72,7 @@ namespace InvoiceGenerator.Models.Data
             {
                 return decimal.Parse(value, CultureInfo.InvariantCulture);
             }
-            catch(Exception exception)
+            catch (Exception exception)
             {
                 throw new Exception($"Error when parsing {value} to a decimal", exception);
             }
@@ -86,7 +81,7 @@ namespace InvoiceGenerator.Models.Data
         private static string? GetNullInsteadOfEmptyString(string? text)
         {
             if (text == null) return null;
-            if(text.Length == 0) return null;
+            if (text.Length == 0) return null;
             return text;
         }
 

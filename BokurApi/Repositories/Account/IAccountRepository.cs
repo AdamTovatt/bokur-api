@@ -1,6 +1,4 @@
 using BokurApi.Models.Bokur;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace BokurApi.Repositories.Account
 {

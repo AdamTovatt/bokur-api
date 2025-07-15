@@ -1,7 +1,6 @@
 using BokurApi.Helpers;
 using BokurApi.Managers.Emails;
 using BokurApi.Managers.Files;
-using BokurApi.Managers.Files.Postgres;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models;
 using BokurApi.Models.Bokur;
