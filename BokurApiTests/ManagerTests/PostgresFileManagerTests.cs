@@ -1,22 +1,28 @@
 ﻿using BokurApi.Managers.Files.Postgres;
 using BokurApi.Models.Bokur;
 using BokurApiTests.TestUtilities;
+using BokurApi.Repositories;
 
 namespace BokurApiTests.ManagerTests
 {
     [TestClass]
     public class PostgresFileManagerTests
     {
+        private PostgresFileManager _fileManager = null!;
+
         [TestInitialize]
         public async Task BeforeEach()
         {
             await DatabaseHelper.CleanTable("stored_file");
+            string connectionString = BokurApi.Helpers.EnvironmentHelper.GetConnectionString();
+            IFileRepository fileRepository = new BokurApi.Repositories.FileRepository(new BokurApi.Repositories.PostgresConnectionFactory(connectionString));
+            _fileManager = new PostgresFileManager(fileRepository);
         }
 
         [TestMethod]
         public async Task CreateFile()
         {
-            bool result = await FileManager.Instance.SaveFileAsync(new BokurFile("TestFile", new byte[100]));
+            bool result = await _fileManager.SaveFileAsync(new BokurFile("TestFile", new byte[100]));
 
             Assert.IsTrue(result);
         }
@@ -26,7 +32,7 @@ namespace BokurApiTests.ManagerTests
         {
             await CreateFile();
 
-            BokurFile? file = await FileManager.Instance.GetFileAsync("TestFile");
+            BokurFile? file = await _fileManager.GetFileAsync("TestFile");
 
             Assert.IsNotNull(file);
             Assert.AreEqual("TestFile", file.Name);
@@ -38,7 +44,7 @@ namespace BokurApiTests.ManagerTests
         {
             await CreateFile();
 
-            bool result = await FileManager.Instance.FileNameExistsAsync("TestFile");
+            bool result = await _fileManager.FileNameExistsAsync("TestFile");
 
             Assert.IsTrue(result);
         }
@@ -48,11 +54,11 @@ namespace BokurApiTests.ManagerTests
         {
             await CreateFile();
 
-            bool result = await FileManager.Instance.DeleteFileAsync("TestFile");
+            bool result = await _fileManager.DeleteFileAsync("TestFile");
 
             Assert.IsTrue(result);
 
-            result = await FileManager.Instance.FileNameExistsAsync("TestFile");
+            result = await _fileManager.FileNameExistsAsync("TestFile");
 
             Assert.IsFalse(result);
         }

@@ -14,6 +14,15 @@ namespace BokurApi.Controllers
     [Route("[controller]")]
     public class ExportController : ControllerBase
     {
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IFileRepository _fileRepository;
+
+        public ExportController(ITransactionRepository transactionRepository, IFileRepository fileRepository)
+        {
+            _transactionRepository = transactionRepository;
+            _fileRepository = fileRepository;
+        }
+
         [Authorize(AuthorizationRole.Admin)]
         [HttpGet("exported")]
         public async Task<IActionResult> GetExportedData(DateTime startDate, DateTime? endDate = null)
@@ -22,7 +31,7 @@ namespace BokurApi.Controllers
             string yearFolder = $"bokur_{startDate:yyyy}";
 
             List<ExportTransaction> transactions =
-                (await TransactionRepository.Instance.GetTransactionsForExport(startDate, endDateToUse))
+                (await _transactionRepository.GetTransactionsForExport(startDate, endDateToUse))
                 .Select(ExportTransaction.FromBokurTransaction).ToList();
 
             Response.Headers.Append("Content-Disposition", "attachment; filename=bokur_export.zip");
@@ -58,7 +67,7 @@ namespace BokurApi.Controllers
 
                     if (!string.IsNullOrEmpty(fileName))
                     {
-                        byte[]? fileBytes = await FileRepository.Instance.ReadFileAsync(fileName);
+                        byte[]? fileBytes = await _fileRepository.ReadFileAsync(fileName);
 
                         if (fileBytes != null)
                         {

@@ -1,12 +1,21 @@
 ﻿using BokurApi.Models.Bokur;
 using Dapper;
 using Npgsql;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace BokurApi.Repositories
 {
-    public class AccountRepository : Repository<AccountRepository>
+    public class AccountRepository : IAccountRepository
     {
+        private readonly IDbConnectionFactory _connectionFactory;
         private Dictionary<int, BokurAccount>? accountsCache;
+
+        public AccountRepository(IDbConnectionFactory connectionFactory)
+        {
+            _connectionFactory = connectionFactory;
+        }
 
         public async Task CreateAsync(string name)
         {
@@ -14,7 +23,7 @@ namespace BokurApi.Repositories
 
             const string query = $"INSERT INTO bokur_account (name) VALUES (@{nameof(name)})";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { name });
         }
 
@@ -24,7 +33,7 @@ namespace BokurApi.Repositories
 
             const string query = $"UPDATE bokur_account SET name = @{nameof(name)} WHERE id = @{nameof(id)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { name, id });
         }
 
@@ -32,7 +41,7 @@ namespace BokurApi.Repositories
         {
             const string query = "SELECT * FROM bokur_account";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 List<BokurAccount> accounts = (await connection.QueryAsync<BokurAccount>(query)).ToList();
 
@@ -41,7 +50,8 @@ namespace BokurApi.Repositories
                 else
                     accountsCache.Clear();
 
-                accounts.ForEach(x => accountsCache.Add(x.Id, x));
+                foreach (BokurAccount x in accounts)
+                    accountsCache.Add(x.Id, x);
 
                 return accounts;
             }
@@ -49,11 +59,11 @@ namespace BokurApi.Repositories
 
         public async Task<BokurAccount?> GetByIdAsync(int id)
         {
-            if(accountsCache == null)
+            if (accountsCache == null)
                 await GetAllAsync();
 
             if (accountsCache == null)
-                throw new Exception("AccountsCache was still nul after getting all accounts, this should not happen");
+                throw new System.Exception("AccountsCache was still null after getting all accounts, this should not happen");
 
             if (!accountsCache.ContainsKey(id))
                 return null;

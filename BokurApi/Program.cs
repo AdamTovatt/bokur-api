@@ -1,12 +1,15 @@
 using BokurApi.Helpers;
 using BokurApi.Models;
 using BokurApi.RateLimiting;
+using BokurApi.Repositories;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Sakur.WebApiUtilities.TaskScheduling;
 using System.Security.Claims;
+using BokurApi.Managers.Files;
+using BokurApi.Managers.Files.Postgres;
 
 namespace BokurApi
 {
@@ -23,6 +26,15 @@ namespace BokurApi
             EnvironmentHelper.TestMandatoryEnvironmentVariables(); // test that the mandatory environment variables exist, will throw an exception otherwise
 
             SetupDatabase(); // set up the database
+
+            // Register database connection factory and repository
+            string connectionString = EnvironmentHelper.GetConnectionString();
+            builder.Services.AddSingleton<IDbConnectionFactory>(new PostgresConnectionFactory(connectionString));
+            builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+            builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+            builder.Services.AddScoped<IFileRepository, FileRepository>();
+            builder.Services.AddScoped<IFileManager, PostgresFileManager>();
+            builder.Services.AddScoped<SummaryHelper>();
 
             // Add services to the container.
             builder.Services.AddDistributedMemoryCache();

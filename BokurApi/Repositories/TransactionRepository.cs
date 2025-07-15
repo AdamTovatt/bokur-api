@@ -8,8 +8,20 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BokurApi.Repositories
 {
-    public class TransactionRepository : Repository<TransactionRepository>
+    public class TransactionRepository : ITransactionRepository
     {
+        private readonly IDbConnectionFactory _connectionFactory;
+        private readonly IAccountRepository _accountRepository;
+
+        public TransactionRepository(
+            IDbConnectionFactory connectionFactory,
+            IAccountRepository accountRepository
+        )
+        {
+            _connectionFactory = connectionFactory;
+            _accountRepository = accountRepository;
+        }
+
         public async Task<int> CreateAsync(BokurTransaction transaction)
         {
             const string query = $@"INSERT INTO bokur_transaction
@@ -26,7 +38,7 @@ namespace BokurApi.Repositories
 
             try
             {
-                using (NpgsqlConnection connection = await GetConnectionAsync())
+                using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                     return await connection.ExecuteScalarAsync<int>(query, new
                     {
                         transaction.ExternalId,
@@ -64,7 +76,7 @@ namespace BokurApi.Repositories
                     ignore_file_requirement = COALESCE(@{nameof(transaction.IgnoreFileRequirement)}, ignore_file_requirement)
                 WHERE id = @transactionId";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new
                 {
                     transactionId = transaction.Id,
@@ -80,7 +92,7 @@ namespace BokurApi.Repositories
         {
             const string query = $@"UPDATE bokur_transaction SET associated_file_name = NULL WHERE id = @{nameof(transactionId)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionId });
         }
 
@@ -89,14 +101,14 @@ namespace BokurApi.Repositories
             if (accountId <= 0)
                 throw new ApiException("Invalid account id", HttpStatusCode.BadRequest);
 
-            BokurAccount? account = await AccountRepository.Instance.GetByIdAsync(accountId);
+            BokurAccount? account = await _accountRepository.GetByIdAsync(accountId);
 
             if (account == null)
                 throw new ApiException($"No account with id {accountId} exists", HttpStatusCode.BadRequest);
 
             const string query = $@"UPDATE bokur_transaction SET affected_account = @{nameof(accountId)} WHERE id = @{nameof(transactionId)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionId, accountId });
         }
 
@@ -111,7 +123,7 @@ namespace BokurApi.Repositories
                 throw new ApiException($"Parent transaction with id {parentTransactionId} has no affected account, can't transfer money from it", HttpStatusCode.BadRequest);
 
             BokurAccount fromAccount = parent.AffectedAccount;
-            BokurAccount? toAccount = await AccountRepository.Instance.GetByIdAsync(toAccountId);
+            BokurAccount? toAccount = await _accountRepository.GetByIdAsync(toAccountId);
 
             if (toAccount == null)
                 throw new ApiException($"No account with id {toAccountId} exists", HttpStatusCode.BadRequest);
@@ -157,7 +169,7 @@ namespace BokurApi.Repositories
         {
             const string query = $"UPDATE bokur_transaction SET value = @{nameof(newValue)} WHERE id = @{nameof(transactionid)} AND external_id IS NULL";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionid, newValue });
         }
 
@@ -184,7 +196,7 @@ namespace BokurApi.Repositories
         {
             const string query = $@"DELETE FROM bokur_transaction WHERE id = @{nameof(transactionId)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionId });
         }
 
@@ -192,7 +204,7 @@ namespace BokurApi.Repositories
         {
             const string query = $@"UPDATE bokur_transaction SET sibling = NULL WHERE id = @{nameof(transactionId)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionId });
         }
 
@@ -200,7 +212,7 @@ namespace BokurApi.Repositories
         {
             const string query = $@"UPDATE bokur_transaction SET sibling = @{nameof(siblingId)} WHERE id = @{nameof(transactionId)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionId, siblingId });
         }
 
@@ -208,23 +220,15 @@ namespace BokurApi.Repositories
         {
             const string query = $@"UPDATE bokur_transaction SET has_children = @{nameof(newValue)} WHERE id = @{nameof(transactionId)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 await connection.ExecuteAsync(query, new { transactionId, newValue });
-        }
-
-        public async Task RemoveAssociatedFile(int transactionId)
-        {
-            const string query = @"UPDATE bokur_transaction SET associated_file_name = NULL WHERE id = @TransactionId";
-
-            using (NpgsqlConnection connection = await GetConnectionAsync())
-                await connection.ExecuteAsync(query, new { TransactionId = transactionId });
         }
 
         public async Task<BokurTransaction?> GetByIdAsync(int id)
         {
             const string query = @"SELECT * FROM bokur_transaction WHERE id = @Id";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 BokurTransaction? transaction = await connection.GetSingleOrDefaultAsync<BokurTransaction>(query, new { Id = id },
                 new Dictionary<string, Func<object?, Task<object?>>>()
@@ -233,7 +237,7 @@ namespace BokurApi.Repositories
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
                             if(x == null) return null;
-                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                            return await _accountRepository.GetByIdAsync((int)x);
                         }
                     }
                 });
@@ -254,14 +258,14 @@ namespace BokurApi.Repositories
                                    ignored = FALSE
                                    AND ((ignore_file_requirement = FALSE AND associated_file_name IS NULL) OR affected_account IS NULL)";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 return await connection.GetAsync<BokurTransaction>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
                 {
                     {
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
                             if(x == null) return null;
-                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                            return await _accountRepository.GetByIdAsync((int)x);
                         }
                     }
                 });
@@ -277,7 +281,7 @@ namespace BokurApi.Repositories
                     nameof(BokurTransaction.AffectedAccount), async (x) =>
                     {
                         if(x == null) return null;
-                        return await AccountRepository.Instance.GetByIdAsync((int)x);
+                        return await _accountRepository.GetByIdAsync((int)x);
                     }
                 }
             });
@@ -291,7 +295,7 @@ namespace BokurApi.Repositories
             const string query = @"SELECT * FROM bokur_transaction WHERE
                                    date < @end AND date >= @start";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { start, end },
                 new Dictionary<string, Func<object?, Task<object?>>>()
@@ -300,7 +304,7 @@ namespace BokurApi.Repositories
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
                             if(x == null) return null;
-                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                            return await _accountRepository.GetByIdAsync((int)x);
                         }
                     }
                 });
@@ -322,7 +326,7 @@ namespace BokurApi.Repositories
                                    date < @{nameof(endDate)} AND date >= @{nameof(startDate)}
                                    ORDER BY date DESC";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { startDate, endDate },
                 new Dictionary<string, Func<object?, Task<object?>>>()
@@ -331,7 +335,7 @@ namespace BokurApi.Repositories
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
                             if(x == null) return null;
-                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                            return await _accountRepository.GetByIdAsync((int)x);
                         }
                     }
                 });
@@ -347,7 +351,7 @@ namespace BokurApi.Repositories
                                    OFFSET @skip
                                    LIMIT @take";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { skip = page * pageSize, take = pageSize },
                 new Dictionary<string, Func<object?, Task<object?>>>()
@@ -356,7 +360,7 @@ namespace BokurApi.Repositories
                         nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
                             if(x == null) return null;
-                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                            return await _accountRepository.GetByIdAsync((int)x);
                         }
                     }
                 });
@@ -375,7 +379,7 @@ namespace BokurApi.Repositories
                                    WHERE (@{nameof(startDate)} IS NULL OR date >= @{nameof(startDate)})
                                      AND (@{nameof(endDate)} IS NULL OR date <= @{nameof(endDate)})";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 return (await connection.GetAsync<string?>(query, new { startDate, endDate })).RemoveNullValues();
             }
@@ -389,7 +393,7 @@ namespace BokurApi.Repositories
                                    GROUP BY affected_account
                                    ORDER BY affected_account";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
                 List<AccountSummary> result = await connection.GetAsync<AccountSummary>(query, null, new Dictionary<string, Func<object?, Task<object?>>>()
                 {
@@ -397,12 +401,12 @@ namespace BokurApi.Repositories
                         "account", async (x) =>
                         {
                             if(x == null) return null;
-                            return await AccountRepository.Instance.GetByIdAsync((int)x);
+                            return await _accountRepository.GetByIdAsync((int)x);
                         }
                     }
                 });
 
-                List<BokurAccount> allAccounts = await AccountRepository.Instance.GetAllAsync();
+                List<BokurAccount> allAccounts = await _accountRepository.GetAllAsync();
                 foreach (BokurAccount account in allAccounts)
                 {
                     if (result.Any(x => x.Account.Id == account.Id))

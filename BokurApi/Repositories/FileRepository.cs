@@ -1,11 +1,19 @@
 ﻿using BokurApi.Helpers;
 using Dapper;
 using Npgsql;
+using System.Threading.Tasks;
 
 namespace BokurApi.Repositories
 {
-    public class FileRepository : Repository<FileRepository>
+    public class FileRepository : IFileRepository
     {
+        private readonly IDbConnectionFactory _connectionFactory;
+
+        public FileRepository(IDbConnectionFactory connectionFactory)
+        {
+            _connectionFactory = connectionFactory;
+        }
+
         public async Task<byte[]?> ReadFileAsync(string fileName)
         {
             const string query = $@"
@@ -13,7 +21,7 @@ namespace BokurApi.Repositories
                 FROM stored_file
                 WHERE name = @{nameof(fileName)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 return await connection.GetSingleOrDefaultAsync<byte[]>(query, new { fileName });
         }
 
@@ -23,7 +31,7 @@ namespace BokurApi.Repositories
                 INSERT INTO stored_file (name, content)
                 VALUES (@{nameof(fileName)}, @{nameof(fileData)})";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 return (await connection.ExecuteAsync(query, new { fileName, fileData })) > 0;
         }
 
@@ -33,7 +41,7 @@ namespace BokurApi.Repositories
                 DELETE FROM stored_file
                 WHERE name = @{nameof(fileName)}";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 return (await connection.ExecuteAsync(query, new { fileName })) > 0;
         }
 
@@ -46,7 +54,7 @@ namespace BokurApi.Repositories
                     WHERE name = @{nameof(fileName)}
                 )";
 
-            using (NpgsqlConnection connection = await GetConnectionAsync())
+            using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
                 return await connection.ExecuteScalarAsync<bool>(query, new { fileName });
         }
     }

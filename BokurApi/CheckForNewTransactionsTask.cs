@@ -15,10 +15,14 @@ namespace BokurApi
         public override TimeSpan ScheduledTime => new TimeSpan(9, 0, 0); // 9:00 AM
 
         private ILogger logger;
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IAccountRepository _accountRepository;
 
-        public CheckForNewTransactionsTask(ILogger<CheckForNewTransactionsTask> logger)
+        public CheckForNewTransactionsTask(ILogger<CheckForNewTransactionsTask> logger, ITransactionRepository transactionRepository, IAccountRepository accountRepository)
         {
             this.logger = logger;
+            _transactionRepository = transactionRepository;
+            _accountRepository = accountRepository;
         }
 
         public override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -37,7 +41,7 @@ namespace BokurApi
 
                 List<Transaction> nordigenTransactions = await NordigenManager.Instance.GetTransactionsAsync(requisition, startDate.ToDateOnly(), endDate.ToDateOnly());
                 List<BokurTransaction> transactions = BokurTransaction.GetList(nordigenTransactions);
-                List<string> existingIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
+                List<string> existingIds = await _transactionRepository.GetExistingExternalIdsAsync();
 
                 List<BokurTransaction> newTransactions = transactions.Where(x => x.ExternalId != null && !existingIds.Contains(x.ExternalId)).ToList().RemoveInternalTransactions();
 
@@ -47,14 +51,14 @@ namespace BokurApi
                 {
                     try
                     {
-                        createdTransactionIds.Add(await TransactionRepository.Instance.CreateAsync(transaction));
+                        createdTransactionIds.Add(await _transactionRepository.CreateAsync(transaction));
                     }
                     catch (ApiException) { } // if the transaction already existed, just skip it, we don't need to add it again
                 }
 
                 if (createdTransactionIds.Count > 0)
                 {
-                    List<BokurAccount> accounts = await AccountRepository.Instance.GetAllAsync();
+                    List<BokurAccount> accounts = await _accountRepository.GetAllAsync();
                     if (accounts.Count > 0)
                     {
                         string[] accountEmails = accounts.Where(x => x.Email != null).Select(x => x.Email).ToArray()!;
@@ -67,7 +71,7 @@ namespace BokurApi
                             if (sentEmails >= maxEmails)
                                 break;
 
-                            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(id);
+                            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(id);
 
                             if (transaction != null)
                             {

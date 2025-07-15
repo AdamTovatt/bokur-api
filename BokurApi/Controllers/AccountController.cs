@@ -14,13 +14,22 @@ namespace BokurApi.Controllers
     [Route("[controller]")]
     public class AccountController : ControllerBase
     {
+        private readonly SummaryHelper _summaryHelper;
+        private readonly IAccountRepository _accountRepository;
+
+        public AccountController(SummaryHelper summaryHelper, IAccountRepository accountRepository)
+        {
+            _summaryHelper = summaryHelper;
+            _accountRepository = accountRepository;
+        }
+
         [Authorize(AuthorizationRole.Admin)]
         [HttpGet("get-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<BokurAccount>), (int)HttpStatusCode.Created)]
         public async Task<ObjectResult> GetAllAccounts()
         {
-            return new ApiResponse(await AccountRepository.Instance.GetAllAsync());
+            return new ApiResponse(await _accountRepository.GetAllAsync());
         }
 
         //[Authorize(AuthorizationRole.Admin)]
@@ -39,7 +48,7 @@ namespace BokurApi.Controllers
                 return new ApiResponse("Invalid values for query parameters startTime and endTime.", HttpStatusCode.BadRequest);
             }
 
-            return new ApiResponse(await SummaryHelper.CreateMonthlySummaryAsync(startTime.Value, endTime.Value));
+            return new ApiResponse(await _summaryHelper.CreateMonthlySummaryAsync(startTime.Value, endTime.Value));
         }
     }
 }

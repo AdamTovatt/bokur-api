@@ -9,14 +9,21 @@ namespace BokurApiTests.RepositoryTests
     [TestClass]
     public class TransactionRepositoryTests
     {
+        private ITransactionRepository _transactionRepository = null!;
+        private static IAccountRepository _accountRepository = null!;
+
         [ClassInitialize]
         public static async Task Setup(TestContext context)
         {
             await DatabaseHelper.CleanTable("bokur_account");
             await DatabaseHelper.CleanTable("bokur_transaction");
-            await AccountRepository.Instance.CreateAsync("Adam");
-            await AccountRepository.Instance.CreateAsync("Oliver");
-            await AccountRepository.Instance.CreateAsync("Shared");
+
+            string connectionString = BokurApi.Helpers.EnvironmentHelper.GetConnectionString();
+            _accountRepository = new AccountRepository(new PostgresConnectionFactory(connectionString));
+
+            await _accountRepository.CreateAsync("Adam");
+            await _accountRepository.CreateAsync("Oliver");
+            await _accountRepository.CreateAsync("Shared");
         }
 
         [ClassCleanup]
@@ -30,16 +37,20 @@ namespace BokurApiTests.RepositoryTests
         public async Task BeforeEach()
         {
             await DatabaseHelper.CleanTable("bokur_transaction");
+            _transactionRepository = new TransactionRepository(
+                new PostgresConnectionFactory(BokurApi.Helpers.EnvironmentHelper.GetConnectionString()),
+                _accountRepository
+            );
         }
 
         [TestMethod]
         public async Task Create()
         {
-            int createdId = await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction1);
+            int createdId = await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction1);
 
             Assert.AreEqual(1, createdId);
 
-            createdId = await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction2);
+            createdId = await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction2);
 
             Assert.AreEqual(2, createdId);
         }
@@ -49,7 +60,7 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
@@ -64,7 +75,7 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllWithoutParentAsync();
+            List<BokurTransaction> transactions = await _transactionRepository.GetAllWithoutParentAsync();
 
             Assert.AreEqual(2, transactions.Count);
 
@@ -84,13 +95,13 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllForMonthAsync(TestDataProvider.BokurTransaction1.Date);
+            List<BokurTransaction> transactions = await _transactionRepository.GetAllForMonthAsync(TestDataProvider.BokurTransaction1.Date);
 
             Assert.AreEqual(1, transactions.Count);
 
             Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transactions[0].ExternalId);
 
-            transactions = await TransactionRepository.Instance.GetAllForMonthAsync(TestDataProvider.BokurTransaction2.Date);
+            transactions = await _transactionRepository.GetAllForMonthAsync(TestDataProvider.BokurTransaction2.Date);
 
             Assert.AreEqual(1, transactions.Count);
 
@@ -102,7 +113,7 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+            List<BokurTransaction> transactions = await _transactionRepository.GetAllThatRequiresActionAsync();
 
             Assert.AreEqual(2, transactions.Count);
 
@@ -110,22 +121,22 @@ namespace BokurApiTests.RepositoryTests
 
             transaction.Name = "Updated name";
             transaction.AssociatedFileName = "Updated file name";
-            transaction.AffectedAccount = await AccountRepository.Instance.GetByIdAsync(1);
+            transaction.AffectedAccount = await _accountRepository.GetByIdAsync(1);
 
-            await TransactionRepository.Instance.UpdateAsync(transaction);
+            await _transactionRepository.UpdateAsync(transaction);
 
-            transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+            transactions = await _transactionRepository.GetAllThatRequiresActionAsync();
 
             Assert.AreEqual(1, transactions.Count);
 
             transaction = transactions[0];
 
-            transaction.AffectedAccount = await AccountRepository.Instance.GetByIdAsync(2);
+            transaction.AffectedAccount = await _accountRepository.GetByIdAsync(2);
             transaction.IgnoreFileRequirement = true;
 
-            await TransactionRepository.Instance.UpdateAsync(transaction);
+            await _transactionRepository.UpdateAsync(transaction);
 
-            transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+            transactions = await _transactionRepository.GetAllThatRequiresActionAsync();
 
             Assert.AreEqual(0, transactions.Count);
         }
@@ -135,18 +146,18 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
             Assert.IsFalse(transaction.HasChildren);
 
-            await TransactionRepository.Instance.SetAffectedAccountAsync(1, 3);
+            await _transactionRepository.SetAffectedAccountAsync(1, 3);
 
-            bool success = await TransactionRepository.Instance.CreateTransferAsync(1, 2, 100);
+            bool success = await _transactionRepository.CreateTransferAsync(1, 2, 100);
 
             Assert.IsTrue(success);
 
-            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
             Assert.AreEqual(1, transaction.Id);
@@ -154,11 +165,11 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(2, transaction.Children?.Count);
 
-            success = await TransactionRepository.Instance.CreateTransferAsync(1, 1, 100);
+            success = await _transactionRepository.CreateTransferAsync(1, 1, 100);
 
             Assert.IsTrue(success);
 
-            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
             Assert.AreEqual(1, transaction.Id);
@@ -166,7 +177,7 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(4, transaction.Children?.Count);
 
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllWithoutParentAsync();
+            List<BokurTransaction> transactions = await _transactionRepository.GetAllWithoutParentAsync();
 
             Assert.AreEqual(2, transactions.Count);
             Assert.IsTrue(transactions[0].HasChildren);
@@ -176,22 +187,22 @@ namespace BokurApiTests.RepositoryTests
         [TestMethod]
         public async Task GetAccountSummaryWithChildTransfers()
         {
-            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction1); // take 100
-            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction2); // take 21.34
-            await TransactionRepository.Instance.CreateAsync(TestDataProvider.BokurTransaction3); // give 20000
+            await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction1); // take 100
+            await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction2); // take 21.34
+            await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction3); // give 20000
 
-            List<AccountSummary> accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+            List<AccountSummary> accountSummaries = await _transactionRepository.GetSummaryAsync();
 
             Assert.AreEqual(3, accountSummaries.Count);
 
             foreach (AccountSummary summary in accountSummaries)
                 Assert.AreEqual(0, summary.Balance);
 
-            await TransactionRepository.Instance.SetAffectedAccountAsync(1, 1); // assign the take 100 to Adam
-            await TransactionRepository.Instance.SetAffectedAccountAsync(2, 2); // assign the take 21.34 to Oliver
-            await TransactionRepository.Instance.SetAffectedAccountAsync(3, 3); // assign the give 20000 to Shared
+            await _transactionRepository.SetAffectedAccountAsync(1, 1); // assign the take 100 to Adam
+            await _transactionRepository.SetAffectedAccountAsync(2, 2); // assign the take 21.34 to Oliver
+            await _transactionRepository.SetAffectedAccountAsync(3, 3); // assign the give 20000 to Shared
 
-            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+            accountSummaries = await _transactionRepository.GetSummaryAsync();
 
             Assert.AreEqual(3, accountSummaries.Count);
 
@@ -199,11 +210,11 @@ namespace BokurApiTests.RepositoryTests
             Assert.AreEqual(-21.34m, accountSummaries.TakeByAccount("Oliver").Balance); // check that Oliver has -21.34
             Assert.AreEqual(20000, accountSummaries.TakeByAccount("Shared").Balance); // check that Shared has 20000
 
-            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries.TakeAccountId("Oliver"), 400); // give 400 to Oliver
-            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries.TakeAccountId("Adam"), 200); // give 200 to Adam       (both from Shared)
+            await _transactionRepository.CreateTransferAsync(3, accountSummaries.TakeAccountId("Oliver"), 400); // give 400 to Oliver
+            await _transactionRepository.CreateTransferAsync(3, accountSummaries.TakeAccountId("Adam"), 200); // give 200 to Adam       (both from Shared)
             // the above two lines should mean Shared lost 600
 
-            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+            accountSummaries = await _transactionRepository.GetSummaryAsync();
 
             Assert.AreEqual(3, accountSummaries.Count);
 
@@ -211,9 +222,9 @@ namespace BokurApiTests.RepositoryTests
             Assert.AreEqual(19400, accountSummaries.TakeByAccount("Shared").Balance); // check that Shared has 20000 - 600 = 19400
             Assert.AreEqual(100, accountSummaries.TakeByAccount("Adam").Balance); // check that Adam has -100 + 200 = 100
 
-            await TransactionRepository.Instance.CreateTransferAsync(3, accountSummaries.TakeAccountId("Oliver"), 576); // give 576 to Oliver from Shared
+            await _transactionRepository.CreateTransferAsync(3, accountSummaries.TakeAccountId("Oliver"), 576); // give 576 to Oliver from Shared
 
-            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+            accountSummaries = await _transactionRepository.GetSummaryAsync();
             Assert.AreEqual(3, accountSummaries.Count);
 
             // Oliver had 378.66, so now he should have 378.66 + 576 = 954.66
@@ -222,7 +233,7 @@ namespace BokurApiTests.RepositoryTests
             Assert.AreEqual(18824, accountSummaries.TakeByAccount("Shared").Balance); // check that Shared has 19400 - 576 = 18824
             Assert.AreEqual(100, accountSummaries.TakeByAccount("Adam").Balance); // check that Adam has 100
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(3);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(3);
 
             Assert.IsNotNull(transaction);
             Assert.IsNotNull(transaction.Children);
@@ -231,9 +242,9 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(576, singleSibling.Value); // find the transaction that added 576 to Oliver
 
-            await TransactionRepository.Instance.DeleteTransactionAsync(singleSibling.Id);
+            await _transactionRepository.DeleteTransactionAsync(singleSibling.Id);
 
-            accountSummaries = await TransactionRepository.Instance.GetSummaryAsync();
+            accountSummaries = await _transactionRepository.GetSummaryAsync();
 
             Assert.AreEqual(3, accountSummaries.Count);
 
@@ -241,7 +252,7 @@ namespace BokurApiTests.RepositoryTests
             Assert.AreEqual(19400, accountSummaries.TakeByAccount("Shared").Balance);
             Assert.AreEqual(100, accountSummaries.TakeByAccount("Adam").Balance);
 
-            BokurTransaction? transaction2 = await TransactionRepository.Instance.GetByIdAsync(3);
+            BokurTransaction? transaction2 = await _transactionRepository.GetByIdAsync(3);
 
             Assert.IsNotNull(transaction2);
             Assert.IsNotNull(transaction2.Children);
@@ -254,18 +265,18 @@ namespace BokurApiTests.RepositoryTests
         {
             await Create();
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
             transaction.Name = "Updated name";
             transaction.AssociatedFileName = "Updated file name";
-            transaction.AffectedAccount = await AccountRepository.Instance.GetByIdAsync(1);
+            transaction.AffectedAccount = await _accountRepository.GetByIdAsync(1);
             transaction.Ignored = true;
 
-            await TransactionRepository.Instance.UpdateAsync(transaction);
+            await _transactionRepository.UpdateAsync(transaction);
 
-            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
@@ -275,7 +286,7 @@ namespace BokurApiTests.RepositoryTests
             Assert.AreEqual(true, transaction.Ignored);
 
             // Make sure other transactions are not affected
-            BokurTransaction? transaction2 = await TransactionRepository.Instance.GetByIdAsync(2);
+            BokurTransaction? transaction2 = await _transactionRepository.GetByIdAsync(2);
 
             Assert.IsNotNull(transaction2);
 
@@ -287,15 +298,15 @@ namespace BokurApiTests.RepositoryTests
         {
             await Update();
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
             Assert.AreEqual("Updated file name", transaction.AssociatedFileName);
 
-            await TransactionRepository.Instance.RemoveAssociatedFile(1);
+            await _transactionRepository.RemoveAssociatedFileAsync(1);
 
-            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
@@ -307,7 +318,7 @@ namespace BokurApiTests.RepositoryTests
         {
             await Update();
 
-            List<string> externalIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
+            List<string> externalIds = await _transactionRepository.GetExistingExternalIdsAsync();
 
             Assert.AreEqual(2, externalIds.Count);
 
@@ -323,7 +334,7 @@ namespace BokurApiTests.RepositoryTests
 
             await Create();
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
@@ -335,10 +346,10 @@ namespace BokurApiTests.RepositoryTests
         [TestMethod]
         public async Task GetExternalIdsWhenNullValuesExist()
         {
-            await TransactionRepository.Instance.CreateAsync(new BokurTransaction(0, "externalid", "Test Non Null", 20, DateTime.Now, null, null, false, null, false, null, false));
-            await TransactionRepository.Instance.CreateAsync(new BokurTransaction(0, null, "Test With Null", 20, DateTime.Now, null, null, false, null, false, null, false));
+            await _transactionRepository.CreateAsync(new BokurTransaction(0, "externalid", "Test Non Null", 20, DateTime.Now, null, null, false, null, false, null, false));
+            await _transactionRepository.CreateAsync(new BokurTransaction(0, null, "Test With Null", 20, DateTime.Now, null, null, false, null, false, null, false));
 
-            List<string> externalIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
+            List<string> externalIds = await _transactionRepository.GetExistingExternalIdsAsync();
 
             Assert.AreEqual(1, externalIds.Count);
         }

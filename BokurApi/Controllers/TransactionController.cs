@@ -1,5 +1,6 @@
 using BokurApi.Helpers;
 using BokurApi.Managers.Emails;
+using BokurApi.Managers.Files;
 using BokurApi.Managers.Files.Postgres;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models;
@@ -19,6 +20,17 @@ namespace BokurApi.Controllers
     [Route("transaction")]
     public class TransactionController : ControllerBase
     {
+        private readonly ITransactionRepository _transactionRepository;
+        private readonly IAccountRepository _accountRepository;
+        private readonly IFileManager _fileManager;
+
+        public TransactionController(ITransactionRepository transactionRepository, IAccountRepository accountRepository, IFileManager fileManager)
+        {
+            _transactionRepository = transactionRepository;
+            _accountRepository = accountRepository;
+            _fileManager = fileManager;
+        }
+
         public static DateTime? DefaultStartTime = new DateTime(2024, 1, 1); // never include transactions before this date
 
         [Authorize(AuthorizationRole.Admin)]
@@ -27,7 +39,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
         public async Task<ObjectResult> CreateRequisition([FromBody] BokurTransaction bokurTransaction) // to create a new transaction (should almost never be used, only for manually inserting balance)
         {
-            int createdId = await TransactionRepository.Instance.CreateAsync(bokurTransaction);
+            int createdId = await _transactionRepository.CreateAsync(bokurTransaction);
 
             return new ApiResponse(createdId.ToString(), HttpStatusCode.Created);
         }
@@ -47,7 +59,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> CleanDuplicateTransactions()
         {
-            List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllThatRequiresActionAsync();
+            List<BokurTransaction> transactions = await _transactionRepository.GetAllThatRequiresActionAsync();
 
             List<DuplicateTransactionPair> duplicatePairs = DuplicateTransactionPair.CreateListOfDuplicates(transactions);
 
@@ -56,7 +68,7 @@ namespace BokurApi.Controllers
                 BokurTransaction transactionToRemove = pair.GetTransactionToRemove();
 
                 transactionToRemove.Ignored = true;
-                await TransactionRepository.Instance.UpdateAsync(transactionToRemove);
+                await _transactionRepository.UpdateAsync(transactionToRemove);
             }
 
             return new ApiResponse();
@@ -78,7 +90,7 @@ namespace BokurApi.Controllers
 
             List<Transaction> nordigenTransactions = await NordigenManager.Instance.GetTransactionsAsync(requisition, startDate.ToDateOnly(), endDate.ToDateOnly());
             List<BokurTransaction> transactions = BokurTransaction.GetList(nordigenTransactions);
-            List<string> existingIds = await TransactionRepository.Instance.GetExistingExternalIdsAsync();
+            List<string> existingIds = await _transactionRepository.GetExistingExternalIdsAsync();
 
             List<BokurTransaction> newTransactions = transactions.Where(x => x.ExternalId != null && !existingIds.Contains(x.ExternalId)).ToList().RemoveInternalTransactions();
 
@@ -88,14 +100,14 @@ namespace BokurApi.Controllers
             {
                 try
                 {
-                    createdTransactionIds.Add(await TransactionRepository.Instance.CreateAsync(transaction));
+                    createdTransactionIds.Add(await _transactionRepository.CreateAsync(transaction));
                 }
                 catch (ApiException) { } // if the transaction already existed, just skip it, we don't need to add it again
             }
 
             if (createdTransactionIds.Count > 0)
             {
-                List<BokurAccount> accounts = await AccountRepository.Instance.GetAllAsync();
+                List<BokurAccount> accounts = await _accountRepository.GetAllAsync();
                 if (accounts.Count > 0)
                 {
                     string[] accountEmails = accounts.Where(x => x.Email != null).Select(x => x.Email).ToArray()!;
@@ -108,7 +120,7 @@ namespace BokurApi.Controllers
                         if (sentEmails >= maxEmails)
                             break;
 
-                        BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(id);
+                        BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(id);
 
                         if (transaction != null)
                         {
@@ -144,7 +156,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(List<AccountSummary>), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetSummaryOfAll()
         {
-            List<AccountSummary> summary = await TransactionRepository.Instance.GetSummaryAsync();
+            List<AccountSummary> summary = await _transactionRepository.GetSummaryAsync();
 
             return new ApiResponse(summary);
         }
@@ -155,7 +167,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> UpdateSingle([FromBody] BokurTransaction transaction)
         {
-            await TransactionRepository.Instance.UpdateAsync(transaction);
+            await _transactionRepository.UpdateAsync(transaction);
             return new ApiResponse("ok");
         }
 
@@ -168,7 +180,7 @@ namespace BokurApi.Controllers
             if (transactionId <= 0)
                 return new ApiResponse("Non zero positive integer transactionId must be provided", HttpStatusCode.BadRequest);
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(transactionId);
 
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
@@ -181,7 +193,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.Created)]
         public async Task<ObjectResult> CreateTransfer(int parentTransactionId, int toAccountId, decimal amount)
         {
-            bool succes = await TransactionRepository.Instance.CreateTransferAsync(parentTransactionId, toAccountId, amount);
+            bool succes = await _transactionRepository.CreateTransferAsync(parentTransactionId, toAccountId, amount);
 
             if (!succes)
                 return new ApiResponse("Error when creating transfer", HttpStatusCode.InternalServerError);
@@ -195,7 +207,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetAllThatRequiresAction()
         {
-            return new ApiResponse(await TransactionRepository.Instance.GetAllThatRequiresActionAsync());
+            return new ApiResponse(await _transactionRepository.GetAllThatRequiresActionAsync());
         }
 
         [Authorize(AuthorizationRole.Admin)]
@@ -204,7 +216,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> GetAll(int pageSize = 10, int page = 0)
         {
-            return new ApiResponse(await TransactionRepository.Instance.GetAllWithoutParentAsync(pageSize, page));
+            return new ApiResponse(await _transactionRepository.GetAllWithoutParentAsync(pageSize, page));
         }
 
         [Authorize(AuthorizationRole.Admin)]
@@ -215,7 +227,7 @@ namespace BokurApi.Controllers
         {
             try
             {
-                await TransactionRepository.Instance.DeleteTransactionAsync(transactionId);
+                await _transactionRepository.DeleteTransactionAsync(transactionId);
 
                 return new ApiResponse("ok", HttpStatusCode.OK);
             }
@@ -233,7 +245,7 @@ namespace BokurApi.Controllers
         {
             try
             {
-                await TransactionRepository.Instance.SetAffectedAccountAsync(transactionId, accountId);
+                await _transactionRepository.SetAffectedAccountAsync(transactionId, accountId);
 
                 return new ApiResponse("ok", HttpStatusCode.OK);
             }
@@ -251,7 +263,7 @@ namespace BokurApi.Controllers
         {
             try
             {
-                await TransactionRepository.Instance.SetTransactionValueAsync(transactionId, amount);
+                await _transactionRepository.SetTransactionValueAsync(transactionId, amount);
 
                 return new ApiResponse("ok", HttpStatusCode.OK);
             }
@@ -273,7 +285,7 @@ namespace BokurApi.Controllers
             if (file.Length > 1000 * 1000 * 128)
                 return new ApiResponse("File is too large, max size is 128MB", HttpStatusCode.BadRequest);
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(transactionId);
 
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transaction}", HttpStatusCode.BadRequest);
@@ -282,21 +294,21 @@ namespace BokurApi.Controllers
                 return new ApiResponse($"Transaction with id {transactionId} already has a file associated with it", HttpStatusCode.BadRequest);
 
             string fileName = file.FileName;
-            if (await FileManager.Instance.FileNameExistsAsync(fileName))
+            if (await _fileManager.FileNameExistsAsync(fileName))
                 return new ApiResponse($"A file with the name {fileName} already exists", HttpStatusCode.Conflict);
 
             using (MemoryStream stream = new MemoryStream(new byte[file.Length]))
             {
                 await file.CopyToAsync(stream);
 
-                bool saveFileResult = await FileManager.Instance.SaveFileAsync(new BokurFile(fileName, stream.ToArray()));
+                bool saveFileResult = await _fileManager.SaveFileAsync(new BokurFile(fileName, stream.ToArray()));
 
                 if (!saveFileResult)
                     return new ApiResponse("Error when saving file", HttpStatusCode.InternalServerError);
             }
 
             transaction.AssociatedFileName = fileName;
-            await TransactionRepository.Instance.UpdateAsync(transaction);
+            await _transactionRepository.UpdateAsync(transaction);
             return new ApiResponse("ok", HttpStatusCode.Created);
         }
 
@@ -305,7 +317,7 @@ namespace BokurApi.Controllers
         [ProducesResponseType(typeof(string), (int)HttpStatusCode.OK)]
         public async Task<ObjectResult> DeleteTransactionFile(int transactionId)
         {
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(transactionId);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(transactionId);
 
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
@@ -313,14 +325,14 @@ namespace BokurApi.Controllers
             if (transaction.AssociatedFileName == null)
                 return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
 
-            bool deleteFileResult = await FileManager.Instance.DeleteFileAsync(transaction.AssociatedFileName);
+            bool deleteFileResult = await _fileManager.DeleteFileAsync(transaction.AssociatedFileName);
 
             if (!deleteFileResult)
                 return new ApiResponse("Error when deleting file", HttpStatusCode.InternalServerError);
 
             transaction.AssociatedFileName = null;
 
-            await TransactionRepository.Instance.RemoveAssociatedFileAsync(transaction.Id);
+            await _transactionRepository.RemoveAssociatedFileAsync(transaction.Id);
 
             return new ApiResponse("ok");
         }
@@ -334,7 +346,7 @@ namespace BokurApi.Controllers
             if (transactionId <= 0)
                 return new ApiResponse("Non zero positive integer transactionId must be provided", HttpStatusCode.BadRequest);
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync((int)transactionId);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync((int)transactionId);
 
             if (transaction == null)
                 return new ApiResponse($"No transaction with id {transactionId}", HttpStatusCode.BadRequest);
@@ -342,7 +354,7 @@ namespace BokurApi.Controllers
             if (transaction.AssociatedFileName == null)
                 return new ApiResponse($"The transaction with id {transactionId} doesn't have a file associated with it", HttpStatusCode.BadRequest);
 
-            BokurFile? file = await FileManager.Instance.GetFileAsync(transaction.AssociatedFileName);
+            BokurFile? file = await _fileManager.GetFileAsync(transaction.AssociatedFileName);
 
             if (file == null)
                 return new ApiResponse($"No file could be found for transaction with id {transactionId} and filename {transaction.AssociatedFileName}", HttpStatusCode.BadRequest);

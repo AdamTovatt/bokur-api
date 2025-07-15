@@ -8,6 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\RequestBodies\**" />
+    <Content Remove="Models\RequestBodies\**" />
+    <EmbeddedResource Remove="Models\RequestBodies\**" />
+    <None Remove="Models\RequestBodies\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Remove="Properties\launchSettings_git.json" />
   </ItemGroup>
 
@@ -60,10 +67,6 @@
     <PackageReference Include="SakurWebApiUtilities" Version="1.2.1" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="2.88.8" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\RequestBodies\" />
   </ItemGroup>
 
   <ItemGroup>

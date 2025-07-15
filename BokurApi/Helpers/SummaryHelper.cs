@@ -1,12 +1,22 @@
 ﻿using BokurApi.Models.Bokur;
 using BokurApi.Repositories;
 using RobinTTY.NordigenApiClient.Models.Responses;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace BokurApi.Helpers
 {
     public class SummaryHelper
     {
-        public static async Task<MonthlySummary> CreateMonthlySummaryAsync(DateTime startDate, DateTime endDate)
+        private readonly ITransactionRepository _transactionRepository;
+
+        public SummaryHelper(ITransactionRepository transactionRepository)
+        {
+            _transactionRepository = transactionRepository;
+        }
+
+        public async Task<MonthlySummary> CreateMonthlySummaryAsync(DateTime startDate, DateTime endDate)
         {
             List<DateTime> months = GetFirstDaysOfMonth(startDate, endDate);
 
@@ -14,7 +24,7 @@ namespace BokurApi.Helpers
 
             foreach (DateTime month in months)
             {
-                List<BokurTransaction> transactions = await TransactionRepository.Instance.GetAllForMonthAsync(month);
+                List<BokurTransaction> transactions = await _transactionRepository.GetAllForMonthAsync(month);
 
                 if (transactions.Count == 0)
                     continue;
@@ -44,20 +54,19 @@ namespace BokurApi.Helpers
             return new MonthlySummary(result);
         }
 
-        private static List<DateTime> GetFirstDaysOfMonth(DateTime start, DateTime end)
+        private List<DateTime> GetFirstDaysOfMonth(DateTime startDate, DateTime endDate)
         {
-            List<DateTime> firstDays = new List<DateTime>();
+            List<DateTime> months = new List<DateTime>();
+            DateTime current = new DateTime(startDate.Year, startDate.Month, 1);
+            DateTime end = new DateTime(endDate.Year, endDate.Month, 1);
 
-            DateTime current = new DateTime(start.Year, start.Month, 1);
-            DateTime endOfEndMonth = new DateTime(end.Year, end.Month, 1);
-
-            while (current <= endOfEndMonth)
+            while (current <= end)
             {
-                firstDays.Add(current);
+                months.Add(current);
                 current = current.AddMonths(1);
             }
 
-            return firstDays;
+            return months;
         }
     }
 }

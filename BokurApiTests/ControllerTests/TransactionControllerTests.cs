@@ -1,8 +1,10 @@
-﻿using BokurApi;
-using BokurApi.Controllers;
+﻿using BokurApi.Controllers;
+using BokurApi.Helpers;
+using BokurApi.Managers.Files;
 using BokurApi.Managers.Files.Postgres;
 using BokurApi.Models.Bokur;
 using BokurApi.Repositories;
+using BokurApiTests.InMemoryRepositories;
 using BokurApiTests.TestUtilities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -13,42 +15,32 @@ namespace BokurApiTests.ControllerTests
     [TestClass]
     public class TransactionControllerTests
     {
-        private TransactionController controller = new TransactionController();
+        private static TransactionController _controller = null!;
+        private static InMemoryTransactionRepository _transactionRepository = null!;
+        private static InMemoryAccountRepository _accountRepository = null!;
+        private static InMemoryFileManager _fileManager = null!;
 
         [ClassInitialize]
         public static async Task BeforeAll(TestContext context)
         {
-            List<BokurTransaction> mockedTransactions = new List<BokurTransaction>()
-            {
-                TestDataProvider.BokurTransaction1,
-                TestDataProvider.BokurTransaction2,
-            };
+            _accountRepository = new InMemoryAccountRepository();
+            _fileManager = new InMemoryFileManager();
+            _transactionRepository = new InMemoryTransactionRepository();
+            _controller = new TransactionController(_transactionRepository, _accountRepository, _fileManager);
 
-            foreach (BokurTransaction transaction in mockedTransactions)
-            {
-                await TransactionRepository.Instance.CreateAsync(transaction);
-            }
+            // Add test data
+            await _accountRepository.CreateAsync("Adam");
+            await _accountRepository.CreateAsync("Oliver");
+            await _accountRepository.CreateAsync("Shared");
 
-            await AccountRepository.Instance.CreateAsync("Adam");
-            await AccountRepository.Instance.CreateAsync("Oliver");
-            await AccountRepository.Instance.CreateAsync("Shared");
+            await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction1);
+            await _transactionRepository.CreateAsync(TestDataProvider.BokurTransaction2);
         }
-
-        [ClassCleanup]
-        public static async Task AfterAll()
-        {
-            await DatabaseHelper.CleanTable("bokur_transaction");
-            await DatabaseHelper.CleanTable("stored_file");
-            await DatabaseHelper.CleanTable("bokur_account");
-        }
-
-        [TestInitialize]
-        public void BeforeEach() { }
 
         [TestMethod]
         public async Task GetTransactions()
         {
-            ObjectResult objectResult = await controller.GetAll();
+            ObjectResult objectResult = await _controller.GetAll();
 
             Assert.IsNotNull(objectResult);
             Assert.IsNotNull(objectResult.Value);
@@ -61,7 +53,7 @@ namespace BokurApiTests.ControllerTests
         [TestMethod]
         public async Task GetSingleTransaction()
         {
-            ObjectResult objectResult = await controller.GetSingle(1);
+            ObjectResult objectResult = await _controller.GetSingle(1);
 
             Assert.IsNotNull(objectResult);
             Assert.IsNotNull(objectResult.Value);
@@ -76,18 +68,18 @@ namespace BokurApiTests.ControllerTests
         {
             const string updatedName = "New, updated name";
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
             transaction.Name = updatedName;
 
-            ObjectResult objectResult = await controller.UpdateSingle(transaction);
+            ObjectResult objectResult = await _controller.UpdateSingle(transaction);
 
             Assert.IsNotNull(objectResult);
             Assert.IsNotNull(objectResult.Value);
 
-            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
@@ -97,7 +89,7 @@ namespace BokurApiTests.ControllerTests
             Assert.AreEqual(TestDataProvider.BokurTransaction1.ExternalId, transaction.ExternalId);
             Assert.AreEqual(TestDataProvider.BokurTransaction1.AffectedAccount, transaction.AffectedAccount);
 
-            AccountController accountController = new AccountController();
+            AccountController accountController = new AccountController(new SummaryHelper(_transactionRepository), _accountRepository);
 
             ObjectResult accountsResult = await accountController.GetAllAccounts();
 
@@ -110,11 +102,11 @@ namespace BokurApiTests.ControllerTests
 
             transaction.AffectedAccount = accounts.First(x => x.Name == "Oliver");
 
-            objectResult = await controller.UpdateSingle(transaction);
+            objectResult = await _controller.UpdateSingle(transaction);
 
             Assert.IsNotNull(objectResult);
 
-            transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
@@ -128,23 +120,24 @@ namespace BokurApiTests.ControllerTests
             {
                 byte[] bytes = new byte[100];
                 stream.Write(bytes);
+                stream.Position = 0; // Ensure stream is readable from the start
                 IFormFile file = new FormFile(stream, 0, bytes.Length, "testFile", "testFile.txt");
 
-                ObjectResult objectResult = await controller.UploadTransactionFile(file, 1);
+                ObjectResult objectResult = await _controller.UploadTransactionFile(file, 1);
 
                 Assert.IsNotNull(objectResult);
 
-                BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+                BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
                 Assert.IsNotNull(transaction);
 
                 Assert.AreEqual("testFile.txt", transaction.AssociatedFileName);
 
-                BokurFile? bokurFile = await FileManager.Instance.GetFileAsync("testFile.txt");
+                BokurFile? bokurFile = await _fileManager.GetFileAsync("testFile.txt");
 
                 Assert.IsNotNull(bokurFile);
 
-                objectResult = await controller.UploadTransactionFile(file, 1);
+                objectResult = await _controller.UploadTransactionFile(file, 1);
 
                 Assert.IsNotNull(objectResult);
                 Assert.AreEqual((int)HttpStatusCode.BadRequest, objectResult.StatusCode);
@@ -156,17 +149,17 @@ namespace BokurApiTests.ControllerTests
         {
             await UploadFile();
 
-            ObjectResult objectResult = await controller.DeleteTransactionFile(1);
+            ObjectResult objectResult = await _controller.DeleteTransactionFile(1);
 
             Assert.IsNotNull(objectResult);
 
-            BokurTransaction? transaction = await TransactionRepository.Instance.GetByIdAsync(1);
+            BokurTransaction? transaction = await _transactionRepository.GetByIdAsync(1);
 
             Assert.IsNotNull(transaction);
 
             Assert.IsNull(transaction.AssociatedFileName);
 
-            BokurFile? bokurFile = await FileManager.Instance.GetFileAsync("testFile.txt");
+            BokurFile? bokurFile = await _fileManager.GetFileAsync("testFile.txt");
             Assert.IsNull(bokurFile);
         }
 
@@ -174,7 +167,7 @@ namespace BokurApiTests.ControllerTests
         public async Task DownloadFile()
         {
             await UploadFile();
-            IActionResult result = await controller.DownloadTransactionFile(1);
+            IActionResult result = await _controller.DownloadTransactionFile(1);
 
             Assert.IsNotNull(result);
 
