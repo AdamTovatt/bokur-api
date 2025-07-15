@@ -158,14 +158,21 @@ namespace BokurApiTests.InMemoryRepositories
             return Task.FromResult(result);
         }
 
-        public Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0)
+        public Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0, int? accountId = null)
         {
             List<BokurTransaction> result = new List<BokurTransaction>();
             int skip = page * pageSize;
             int take = pageSize;
-            for (int i = skip; i < skip + take && i < transactions.Count; i++)
+            
+            List<BokurTransaction> filteredTransactions = transactions;
+            if (accountId.HasValue)
             {
-                result.Add(transactions[i]);
+                filteredTransactions = transactions.Where(t => t.AffectedAccount?.Id == accountId.Value).ToList();
+            }
+            
+            for (int i = skip; i < skip + take && i < filteredTransactions.Count; i++)
+            {
+                result.Add(filteredTransactions[i]);
             }
             return Task.FromResult(result);
         }

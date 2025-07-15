@@ -19,7 +19,7 @@ namespace BokurApi.Repositories.Transaction
         Task<List<BokurTransaction>> GetAllChildrenForParentAsync(Npgsql.NpgsqlConnection connection, int parentId);
         Task<List<BokurTransaction>> GetAllForMonthAsync(DateTime month);
         Task<List<BokurTransaction>> GetTransactionsForExport(DateTime startDate, DateTime endDate);
-        Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0);
+        Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0, int? accountId = null);
         Task<List<string>> GetExistingExternalIdsAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<List<AccountSummary>> GetSummaryAsync();
     }

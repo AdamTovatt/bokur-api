@@ -346,26 +346,33 @@ namespace BokurApi.Repositories.Transaction
             }
         }
 
-        public async Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0)
+        public async Task<List<BokurTransaction>> GetAllWithoutParentAsync(int pageSize = 10, int page = 0, int? accountId = null)
         {
-            const string query = @"SELECT * FROM bokur_transaction WHERE parent IS NULL
+            string query = @"SELECT * FROM bokur_transaction WHERE parent IS NULL";
+
+            if (accountId.HasValue)
+                query += " AND affected_account = @accountId";
+
+            query += @"
                                    ORDER BY date DESC
                                    OFFSET @skip
                                    LIMIT @take";
 
             using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
             {
-                List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(query, new { skip = page * pageSize, take = pageSize },
-                new Dictionary<string, Func<object?, Task<object?>>>()
-                {
+                List<BokurTransaction> result = await connection.GetAsync<BokurTransaction>(
+                    query,
+                    new { skip = page * pageSize, take = pageSize, accountId },
+                    new Dictionary<string, Func<object?, Task<object?>>>()
                     {
-                        nameof(BokurTransaction.AffectedAccount), async (x) =>
                         {
-                            if(x == null) return null;
-                            return await _accountRepository.GetByIdAsync((int)x);
+                            nameof(BokurTransaction.AffectedAccount), async (x) =>
+                            {
+                                if(x == null) return null;
+                                return await _accountRepository.GetByIdAsync((int)x);
+                            }
                         }
-                    }
-                });
+                    });
 
                 foreach (BokurTransaction transaction in result.Where(x => x.HasChildren))
                     transaction.Children = await GetAllChildrenForParentAsync(connection, transaction.Id);

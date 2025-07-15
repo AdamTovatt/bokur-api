@@ -215,9 +215,9 @@ namespace BokurApi.Controllers
         [HttpGet("get-all")]
         [Limit(MaxRequests = 20, TimeWindow = 10)]
         [ProducesResponseType(typeof(List<BokurTransaction>), (int)HttpStatusCode.OK)]
-        public async Task<ObjectResult> GetAll(int pageSize = 10, int page = 0)
+        public async Task<ObjectResult> GetAll(int pageSize = 10, int page = 0, int? accountId = null)
         {
-            return new ApiResponse(await _transactionRepository.GetAllWithoutParentAsync(pageSize, page));
+            return new ApiResponse(await _transactionRepository.GetAllWithoutParentAsync(pageSize, page, accountId));
         }
 
         [Authorize(AuthorizationRole.Admin)]

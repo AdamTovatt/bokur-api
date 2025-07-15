@@ -356,5 +356,33 @@ namespace BokurApiTests.RepositoryTests
 
             Assert.AreEqual(1, externalIds.Count);
         }
+
+        [TestMethod]
+        public async Task GetAllWithoutParentAsync_FiltersByAccountId()
+        {
+            await Create();
+
+            // Assign transactions to different accounts
+            await _transactionRepository.SetAffectedAccountAsync(1, 1); // Adam
+            await _transactionRepository.SetAffectedAccountAsync(2, 2); // Oliver
+
+            // Get only Adam's transactions
+            List<BokurTransaction> adamTransactions = await _transactionRepository.GetAllWithoutParentAsync(accountId: 1);
+            Assert.AreEqual(1, adamTransactions.Count);
+            Assert.AreEqual(1, adamTransactions[0].AffectedAccount?.Id);
+
+            // Get only Oliver's transactions
+            List<BokurTransaction> oliverTransactions = await _transactionRepository.GetAllWithoutParentAsync(accountId: 2);
+            Assert.AreEqual(1, oliverTransactions.Count);
+            Assert.AreEqual(2, oliverTransactions[0].AffectedAccount?.Id);
+
+            // Get for an account with no transactions
+            List<BokurTransaction> sharedTransactions = await _transactionRepository.GetAllWithoutParentAsync(accountId: 3);
+            Assert.AreEqual(0, sharedTransactions.Count);
+
+            // Get all (should return both, as in the original test)
+            List<BokurTransaction> allTransactions = await _transactionRepository.GetAllWithoutParentAsync();
+            Assert.AreEqual(2, allTransactions.Count);
+        }
     }
 }
