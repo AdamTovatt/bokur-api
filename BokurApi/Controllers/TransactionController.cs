@@ -61,12 +61,10 @@ namespace BokurApi.Controllers
         {
             List<BokurTransaction> transactions = await _transactionRepository.GetAllThatRequiresActionAsync();
 
-            List<DuplicateTransactionPair> duplicatePairs = DuplicateTransactionPair.CreateListOfDuplicates(transactions);
+            List<BokurTransaction> transactionsToRemove = DuplicateTransactionHelper.FindTransactionsToRemove(transactions);
 
-            foreach (DuplicateTransactionPair pair in duplicatePairs)
+            foreach (BokurTransaction transactionToRemove in transactionsToRemove)
             {
-                BokurTransaction transactionToRemove = pair.GetTransactionToRemove();
-
                 transactionToRemove.Ignored = true;
                 await _transactionRepository.UpdateAsync(transactionToRemove);
             }
