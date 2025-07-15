@@ -3,7 +3,8 @@ using BokurApi.Managers.Emails;
 using BokurApi.Managers.Transactions;
 using BokurApi.Models.Bokur;
 using BokurApi.Models.Exceptions;
-using BokurApi.Repositories;
+using BokurApi.Repositories.Account;
+using BokurApi.Repositories.Transaction;
 using RobinTTY.NordigenApiClient.Models.Responses;
 using Sakur.WebApiUtilities.TaskScheduling;
 

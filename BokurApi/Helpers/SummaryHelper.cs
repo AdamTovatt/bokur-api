@@ -1,5 +1,5 @@
 ﻿using BokurApi.Models.Bokur;
-using BokurApi.Repositories;
+using BokurApi.Repositories.Transaction;
 using RobinTTY.NordigenApiClient.Models.Responses;
 using System;
 using System.Collections.Generic;

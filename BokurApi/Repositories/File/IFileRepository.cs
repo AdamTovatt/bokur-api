@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Repositories.File
 {
     public interface IFileRepository
     {
@@ -9,4 +9,4 @@ namespace BokurApi.Repositories
         Task<bool> DeleteFileAsync(string fileName);
         Task<bool> GetFileExists(string fileName);
     }
-} 
+}

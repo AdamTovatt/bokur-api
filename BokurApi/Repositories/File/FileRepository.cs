@@ -1,9 +1,10 @@
 ﻿using BokurApi.Helpers;
+using BokurApi.Helpers.DatabaseConnection;
 using Dapper;
 using Npgsql;
 using System.Threading.Tasks;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Repositories.File
 {
     public class FileRepository : IFileRepository
     {
@@ -32,7 +33,7 @@ namespace BokurApi.Repositories
                 VALUES (@{nameof(fileName)}, @{nameof(fileData)})";
 
             using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
-                return (await connection.ExecuteAsync(query, new { fileName, fileData })) > 0;
+                return await connection.ExecuteAsync(query, new { fileName, fileData }) > 0;
         }
 
         public async Task<bool> DeleteFileAsync(string fileName)
@@ -42,7 +43,7 @@ namespace BokurApi.Repositories
                 WHERE name = @{nameof(fileName)}";
 
             using (NpgsqlConnection connection = await _connectionFactory.GetConnectionAsync())
-                return (await connection.ExecuteAsync(query, new { fileName })) > 0;
+                return await connection.ExecuteAsync(query, new { fileName }) > 0;
         }
 
         public async Task<bool> GetFileExists(string fileName)

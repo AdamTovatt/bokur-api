@@ -1,5 +1,5 @@
 ﻿using BokurApi.Models.Bokur;
-using BokurApi.Repositories;
+using BokurApi.Repositories.File;
 
 namespace BokurApi.Managers.Files.Postgres
 {

@@ -2,7 +2,7 @@ using BokurApi.Models.Bokur;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Repositories.Account
 {
     public interface IAccountRepository
     {
@@ -11,4 +11,4 @@ namespace BokurApi.Repositories
         Task<List<BokurAccount>> GetAllAsync();
         Task<BokurAccount?> GetByIdAsync(int id);
     }
-} 
+}

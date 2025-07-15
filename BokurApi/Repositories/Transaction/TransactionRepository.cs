@@ -5,8 +5,10 @@ using Npgsql;
 using BokurApi.Models.Exceptions;
 using System.Net;
 using static System.Runtime.InteropServices.JavaScript.JSType;
+using BokurApi.Repositories.Account;
+using BokurApi.Helpers.DatabaseConnection;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Repositories.Transaction
 {
     public class TransactionRepository : ITransactionRepository
     {

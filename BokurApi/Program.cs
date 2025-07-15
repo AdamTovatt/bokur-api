@@ -10,6 +10,10 @@ using Sakur.WebApiUtilities.TaskScheduling;
 using System.Security.Claims;
 using BokurApi.Managers.Files;
 using BokurApi.Managers.Files.Postgres;
+using BokurApi.Repositories.Account;
+using BokurApi.Repositories.File;
+using BokurApi.Repositories.Transaction;
+using BokurApi.Helpers.DatabaseConnection;
 
 namespace BokurApi
 {

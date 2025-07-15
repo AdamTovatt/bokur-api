@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Repositories.Transaction
 {
     public interface ITransactionRepository
     {
@@ -23,4 +23,4 @@ namespace BokurApi.Repositories
         Task<List<string>> GetExistingExternalIdsAsync(DateTime? startDate = null, DateTime? endDate = null);
         Task<List<AccountSummary>> GetSummaryAsync();
     }
-} 
+}

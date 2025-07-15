@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Npgsql;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Helpers.DatabaseConnection
 {
     public class PostgresConnectionFactory : IDbConnectionFactory
     {
@@ -12,6 +12,12 @@ namespace BokurApi.Repositories
             _connectionString = connectionString;
         }
 
+        public static PostgresConnectionFactory CreateFromEnvironmentVaribles()
+        {
+            string connectionString = EnvironmentHelper.GetConnectionString();
+            return new PostgresConnectionFactory(connectionString);
+        }
+
         public async Task<NpgsqlConnection> GetConnectionAsync()
         {
             NpgsqlConnection connection = new NpgsqlConnection(_connectionString);
@@ -19,4 +25,4 @@ namespace BokurApi.Repositories
             return connection;
         }
     }
-} 
+}

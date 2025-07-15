@@ -3,7 +3,7 @@ using BokurApi.Models;
 using BokurApi.Models.Bokur;
 using BokurApi.Models.Http;
 using BokurApi.RateLimiting;
-using BokurApi.Repositories;
+using BokurApi.Repositories.Account;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;

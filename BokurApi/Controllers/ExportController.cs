@@ -1,12 +1,13 @@
 ﻿using BokurApi.Models;
 using BokurApi.Models.Bokur;
-using BokurApi.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IO.Compression;
 using System.Text;
 using ClosedXML.Excel;
-using BokurApi.Models.Http; // Ensure you have ClosedXML installed via NuGet
+using BokurApi.Models.Http;
+using BokurApi.Repositories.File;
+using BokurApi.Repositories.Transaction; // Ensure you have ClosedXML installed via NuGet
 
 namespace BokurApi.Controllers
 {

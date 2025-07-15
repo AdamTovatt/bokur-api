@@ -1,11 +1,12 @@
-﻿using BokurApi.Models.Bokur;
+﻿using BokurApi.Helpers.DatabaseConnection;
+using BokurApi.Models.Bokur;
 using Dapper;
 using Npgsql;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace BokurApi.Repositories
+namespace BokurApi.Repositories.Account
 {
     public class AccountRepository : IAccountRepository
     {
@@ -63,7 +64,7 @@ namespace BokurApi.Repositories
                 await GetAllAsync();
 
             if (accountsCache == null)
-                throw new System.Exception("AccountsCache was still null after getting all accounts, this should not happen");
+                throw new Exception("AccountsCache was still null after getting all accounts, this should not happen");
 
             if (!accountsCache.ContainsKey(id))
                 return null;

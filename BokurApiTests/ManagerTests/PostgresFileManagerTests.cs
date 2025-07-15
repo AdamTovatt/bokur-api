@@ -1,7 +1,8 @@
 ﻿using BokurApi.Managers.Files.Postgres;
 using BokurApi.Models.Bokur;
 using BokurApiTests.TestUtilities;
-using BokurApi.Repositories;
+using BokurApi.Repositories.File;
+using BokurApi.Helpers.DatabaseConnection;
 
 namespace BokurApiTests.ManagerTests
 {
@@ -14,8 +15,7 @@ namespace BokurApiTests.ManagerTests
         public async Task BeforeEach()
         {
             await DatabaseHelper.CleanTable("stored_file");
-            string connectionString = BokurApi.Helpers.EnvironmentHelper.GetConnectionString();
-            IFileRepository fileRepository = new BokurApi.Repositories.FileRepository(new BokurApi.Repositories.PostgresConnectionFactory(connectionString));
+            IFileRepository fileRepository = new FileRepository(PostgresConnectionFactory.CreateFromEnvironmentVaribles());
             _fileManager = new PostgresFileManager(fileRepository);
         }
 

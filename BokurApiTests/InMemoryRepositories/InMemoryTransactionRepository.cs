@@ -1,5 +1,6 @@
 using BokurApi.Models.Bokur;
-using BokurApi.Repositories;
+using BokurApi.Repositories.Account;
+using BokurApi.Repositories.Transaction;
 using System;
 using System.Collections.Generic;
 using System.Linq;
