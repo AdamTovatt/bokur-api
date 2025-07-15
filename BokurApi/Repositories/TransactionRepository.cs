@@ -119,8 +119,8 @@ namespace BokurApi.Repositories
             if (fromAccount.Id == toAccount.Id)
                 throw new ApiException("From and to account cannot be the same", HttpStatusCode.BadRequest);
 
-            if (amount <= 0)
-                throw new ApiException("Amount must be greater than 0", HttpStatusCode.BadRequest);
+            if (amount == 0)
+                throw new ApiException("Amount cannot be zero", HttpStatusCode.BadRequest);
 
             BokurTransaction outTransaction = new BokurTransaction(0, null, $"Transfer from {fromAccount.Name}", amount * -1, parent.Date, null, fromAccount, false, parent.Id, false, null, false);
             BokurTransaction inTransaction = new BokurTransaction(0, null, $"Transfer to {toAccount.Name}", amount, parent.Date, null, toAccount, false, parent.Id, false, null, false);
