@@ -7,6 +7,7 @@ using BokurApi.RateLimiting;
 using BokurApi.Repositories.Account;
 using BokurApi.Repositories.File;
 using BokurApi.Repositories.Transaction;
+using BokurApi.Services;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -37,6 +38,7 @@ namespace BokurApi
             builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
             builder.Services.AddScoped<IFileRepository, FileRepository>();
             builder.Services.AddScoped<IFileManager, PostgresFileManager>();
+            builder.Services.AddScoped<IExportService, ExportService>();
             builder.Services.AddScoped<SummaryHelper>();
 
             // Add services to the container.
