@@ -85,7 +85,7 @@ namespace BokurApiTests.ServiceTests
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/transactions.csv"));
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/transactions.xlsx"));
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/06_june/001_2024-06-15_file1.jpg"));
-                    Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/07_july/001_2024-07-20_file2.png"));
+                    Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/07_july/002_2024-07-20_file2.png"));
 
                     // Verify CSV content
                     ZipArchiveEntry csvEntry = zip.GetEntry("bokur_2024/transactions.csv")!;
@@ -331,12 +331,12 @@ namespace BokurApiTests.ServiceTests
                     // Verify files are in correct month folders with correct prefixes
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/01_january/001_2024-01-15_jan_file.jpg"));
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/01_january/002_2024-01-25_jan_file2.pdf"));
-                    Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/02_february/001_2024-02-20_feb_file.png"));
+                    Assert.IsTrue(zip.Entries.Any(e => e.FullName == "bokur_2024/files/02_february/003_2024-02-20_feb_file.png"));
 
-                    // Verify sequence numbers restart for each month
+                    // Verify sequence numbers continue across months (not restarting each month)
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName.Contains("01_january/001_")));
                     Assert.IsTrue(zip.Entries.Any(e => e.FullName.Contains("01_january/002_")));
-                    Assert.IsTrue(zip.Entries.Any(e => e.FullName.Contains("02_february/001_")));
+                    Assert.IsTrue(zip.Entries.Any(e => e.FullName.Contains("02_february/003_")));
                 }
             }
         }

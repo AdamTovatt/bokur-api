@@ -80,10 +80,9 @@ namespace BokurApi.Services
                     .OrderBy(g => g.Key.Year)
                     .ThenBy(g => g.Key.Month);
 
+                int sequence = 1;
                 foreach (IGrouping<(int Year, int Month), ExportTransaction> monthGroup in transactionsByMonth)
                 {
-                    int sequence = 1;
-
                     foreach (ExportTransaction transaction in monthGroup.OrderBy(t => t.TimeOfTransaction))
                     {
                         string exportPath = GetExportFilePath(transaction, sequence);
@@ -124,10 +123,10 @@ namespace BokurApi.Services
                         .OrderBy(g => g.Key.Year)
                         .ThenBy(g => g.Key.Month);
 
+                    int sequence = 1;
                     foreach (IGrouping<(int Year, int Month), ExportTransaction> monthGroup in transactionsByMonth)
                     {
                         string monthFolder = GetMonthFolderName(new DateTime(monthGroup.Key.Year, monthGroup.Key.Month, 1));
-                        int sequence = 1;
 
                         foreach (ExportTransaction transaction in monthGroup.OrderBy(t => t.TimeOfTransaction))
                         {
