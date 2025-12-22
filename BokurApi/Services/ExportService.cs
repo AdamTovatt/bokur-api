@@ -1,6 +1,7 @@
 using BokurApi.Models.Bokur;
 using BokurApi.Repositories.File;
 using BokurApi.Repositories.Transaction;
+using System.Globalization;
 using System.IO.Compression;
 using System.Text;
 
@@ -19,7 +20,7 @@ namespace BokurApi.Services
 
         private string GetMonthFolderName(DateTime date)
         {
-            return $"{date.Month:D2}_{date:MMMM}".ToLowerInvariant();
+            return $"{date.Month:D2}_{date.ToString("MMMM", CultureInfo.InvariantCulture)}".ToLowerInvariant();
         }
 
         private string GetPrefixedFileName(string originalFileName, int sequence, DateTime transactionDate, int maxLength = 200)
