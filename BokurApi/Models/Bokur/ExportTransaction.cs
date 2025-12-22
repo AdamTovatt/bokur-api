@@ -39,7 +39,7 @@ namespace BokurApi.Models.Bokur
                                          $"{FileName ?? "(missing file)"}");
         }
 
-        public static void WriteExcelAsync(List<ExportTransaction> transactions, Stream excelStream)
+        public static void WriteExcelAsync(List<ExportTransaction> transactions, Stream excelStream, Dictionary<int, string>? transactionIdToExportPath = null)
         {
             using (XLWorkbook workbook = new XLWorkbook())
             {
@@ -70,7 +70,12 @@ namespace BokurApi.Models.Bokur
 
                     if (!string.IsNullOrEmpty(transaction.FileName))
                     {
-                        string filePath = $"files/{transaction.FileName.Trim()}";
+                        string filePath;
+                        if (transactionIdToExportPath != null && transactionIdToExportPath.TryGetValue(transaction.Id, out string? exportPath) && !string.IsNullOrEmpty(exportPath))
+                            filePath = exportPath;
+                        else
+                            filePath = $"files/{transaction.FileName.Trim()}";
+
                         Uri fileUri = new Uri(filePath, UriKind.Relative);
                         worksheet.Cell(row, 7).SetHyperlink(new XLHyperlink(fileUri));
                         worksheet.Cell(row, 7).Value = transaction.FileName;
