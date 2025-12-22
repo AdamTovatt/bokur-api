@@ -404,6 +404,69 @@ namespace BokurApiTests.ServiceTests
                 }
             }
         }
+
+        [TestMethod]
+        public async Task ExportTransactions_WithExtremelyLongExtension_HandlesGracefully()
+        {
+            // Arrange
+            await _accountRepository.CreateAsync("TestAccount");
+            BokurAccount account = (await _accountRepository.GetAllAsync()).First();
+
+            DateTime startDate = new DateTime(2024, 1, 1);
+            DateTime endDate = new DateTime(2024, 12, 31);
+
+            // Create a filename with an extremely long extension (over 184 characters)
+            string longExtension = new string('x', 200);
+            string fileNameWithLongExtension = $"file.{longExtension}";
+            BokurTransaction transaction = new BokurTransaction(
+                0,
+                "ext1",
+                "Transaction with extremely long extension",
+                100m,
+                new DateTime(2024, 4, 15),
+                fileNameWithLongExtension,
+                account,
+                false,
+                null,
+                false,
+                null,
+                false);
+
+            await _transactionRepository.CreateAsync(transaction);
+
+            byte[] fileBytes = Encoding.UTF8.GetBytes("File content");
+            await _fileRepository.SaveFileAsync(fileNameWithLongExtension, fileBytes);
+
+            // Act
+            using (MemoryStream outputStream = new MemoryStream())
+            {
+                await _exportService.ExportTransactionsAsync(startDate, endDate, outputStream);
+
+                // Assert - should not throw and should create a valid entry
+                outputStream.Position = 0;
+                using (ZipArchive zip = new ZipArchive(outputStream, ZipArchiveMode.Read))
+                {
+                    // Find the file entry (extension will be truncated)
+                    ZipArchiveEntry? fileEntry = zip.Entries.FirstOrDefault(e => e.FullName.Contains("04_april") && e.FullName.StartsWith("bokur_2024/files/04_april/001_2024-04-15_"));
+                    Assert.IsNotNull(fileEntry, "File entry should exist even with extremely long extension");
+
+                    // Verify the filename is within reasonable length
+                    string entryName = Path.GetFileName(fileEntry.FullName);
+                    Assert.IsTrue(entryName.Length < 250, $"Filename should be truncated. Actual length: {entryName.Length}");
+
+                    // Verify it still starts with the prefix
+                    Assert.IsTrue(entryName.StartsWith("001_2024-04-15_"), "Filename should start with sequence and date prefix");
+
+                    // Verify file content is correct
+                    using (Stream fileStream = fileEntry.Open())
+                    {
+                        byte[] extractedBytes = new byte[fileEntry.Length];
+                        await fileStream.ReadAsync(extractedBytes, 0, extractedBytes.Length);
+                        CollectionAssert.AreEqual(fileBytes, extractedBytes);
+                    }
+                }
+            }
+        }
     }
 }
 

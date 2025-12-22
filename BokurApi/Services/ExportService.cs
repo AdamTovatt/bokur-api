@@ -30,7 +30,15 @@ namespace BokurApi.Services
             string extension = Path.GetExtension(originalFileName);
             int extensionLength = extension.Length;
 
-            int baseNameLength = availableLength - extensionLength;
+            // If extension is longer than available space, truncate it
+            if (extensionLength > availableLength)
+            {
+                int maxExtensionLength = Math.Max(1, availableLength - 1); // Leave at least 1 char for base name
+                extension = extension.Substring(0, maxExtensionLength);
+                extensionLength = extension.Length;
+            }
+
+            int baseNameLength = Math.Max(0, availableLength - extensionLength);
 
             string baseName = Path.GetFileNameWithoutExtension(originalFileName);
             if (baseName.Length > baseNameLength)
